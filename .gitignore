@@ -1,0 +1,11 @@
+*.o
+*.obj
+*.so
+*.dll
+*.d
+*.exe
+*.out
+
+*.swp
+
+.DS_Store
