@@ -35,6 +35,14 @@ const unsigned int STRING = 2;
 typedef unsigned int RC;
 
 /* RM */
+const unsigned int RID_INVALILD = 1;
+const unsigned int RM_MANAGER_OPENFAILED = RID_INVALILD + 1;
+const unsigned int RM_MANAGER_CLOSEFAILED = RM_MANAGER_OPENFAILED + 1;
+const unsigned int RM_MANAGER_CREATEFAILED = RM_MANAGER_CLOSEFAILED + 1;
+const unsigned int RM_RECORD_INVALID = RM_MANAGER_CREATEFAILED + 1;
+const unsigned int RM_FILEHANDLE_NORID = RM_RECORD_INVALID + 1;
+const unsigned int RM_FILESCAN_NONEXT = RM_FILEHANDLE_NORID + 1;
+const unsigned int RM_FILESCAN_NOTOPEN = RM_FILESCAN_NONEXT + 1;
 
 
 
