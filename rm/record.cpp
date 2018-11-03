@@ -1,23 +1,22 @@
 #include "rm.h"
 
 
-RM_Record::RM_Record() : pData(NULL) {}
+RM_Record::RM_Record() {}
 
 
-RM_Record::~RM_Record() {}
+RM_Record::RM_Record(int size, const RID &rid) : size(size), rid(rid), pData(new char[size]) {}
 
 
-RC RM_Record::getData(char *&pData) {
-    if (this->pData) {
-        pData = this->pData;
-        return 0;
-    } else {
-        return RM_RECORD_INVALID;
-    }
+RM_Record::~RM_Record() {
+    delete[] pData;
 }
 
 
-RC RM_Record::getRid(RID &rid) {
-    rid = this->rid;
-    return 0;
+char *RM_Record::getData() {
+    return pData;
+}
+
+
+RID RM_Record::getRid() {
+    return rid;
 }

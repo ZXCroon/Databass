@@ -8,11 +8,14 @@ class RID {
 
 public:
     RID();
-    ~RID();
     RID(PageNum pageNum, SlotNum slotNum);
 
-    RC getPageNum(PageNum &pageNum) const;
-    RC getSlotNum(SlotNum &slotNum) const;
+    PageNum getPageNum() const;
+    SlotNum getSlotNum() const;
+
+private:
+    PageNum pageNum;
+    SlotNum slotNum;
 
 };
 

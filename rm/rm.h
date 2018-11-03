@@ -17,7 +17,7 @@ public:
     RC closeFile(RM_FileHandle &fileHandle);
 
 private:
-    BufPageManager bpm;
+    BufPageManager &bpm;
 
 };
 
@@ -25,18 +25,23 @@ private:
 class RM_FileHandle {
 
 public:
-    RM_FileHandle(unsigned int fileId);
+    RM_FileHandle(BufPageManager &bpm, unsigned int fileId);
     ~RM_FileHandle();
 
     RC getRec(const RID &rid, RM_Record &rec) const;
     RC insertRec(const char *pData, RID &rid);
     RC deleteRec(const RID &rid);
     RC updateRec(const RM_Record &rec);
-    RC ForcePages(PageNum pageNum = ALL_PAGES) const;
     RC getFirstRid(RID &rid) const;
     RC getNextRid(const RID &lastRid, RID &rid) const;
 
+private:
+    inline int getSlotOffset(SlotNum slotNum) {
+        return sizeof(PageHeader) + slotNum * recordSize;
+    }
+    BufPageManager &bpm;
     unsigned int fileId;
+    int recordSize, maxRecordCnt, availPageCnt;
 
 };
 
@@ -45,14 +50,14 @@ class RM_Record {
 
 public:
     RM_Record();
+    RM_Record(int size, const RID &rid);
     ~RM_Record();
 
-    RC getData(char *&pData) const;
-    RC getRid(RID &rid) const;
-
-    friend RC RM_FileHandle::getRec(const RID &rid, RM_Record &rec);
+    char *getData();
+    RID getRid();
 
 private:
+    int size;
     char *pData;
     RID rid;
 
@@ -84,8 +89,15 @@ private:
 };
 
 
-struct HeaderPage {
-    unsigned int recordSize;
+struct FileHeaderPage {
+    unsigned int recordSize, availPageCnt;
+    PageNum firstFree, lastFree;
+};
+
+
+struct PageHeader {
+    PageNum prevFree, nextFree;
+    Bits bitmap;
 };
 
 
