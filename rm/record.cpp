@@ -8,7 +8,9 @@ RM_Record::RM_Record(int size, const RID &rid) : size(size), rid(rid), pData(new
 
 
 RM_Record::~RM_Record() {
-    delete[] pData;
+    if (pData != NULL) {
+        delete[] pData;
+    }
 }
 
 
@@ -19,4 +21,10 @@ char *RM_Record::getData() {
 
 RID RM_Record::getRid() {
     return rid;
+}
+
+
+void RM_Record::nullify() {
+    delete[] pData;
+    pData = NULL;
 }

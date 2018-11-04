@@ -2,49 +2,46 @@
 #define DEF_H
 
 
-typedef unsigned int PageNum;
-const unsigned int ALL_PAGES = -1;
-const unsigned int NO_PAGE = -2;
-typedef unsigned int SlotNum;
+typedef int PageNum;
+const int ALL_PAGES = -1;
+const int NO_PAGE = -2;
+typedef int SlotNum;
 typedef unsigned long long Bits;
 
 
 //
 // Comparison Operators
 //
-typedef unsigned int CompOp;
-const unsigned int EQ_OP = 0;
-const unsigned int LT_OP = 1;
-const unsigned int GT_OP = 2;
-const unsigned int LE_OP = 3;
-const unsigned int GE_OP = 4;
-const unsigned int NE_OP = 5;
-const unsigned int NO_OP = 6;
+typedef int CompOp;
+const int EQ_OP = 0;
+const int LT_OP = 1;
+const int GT_OP = 2;
+const int LE_OP = 3;
+const int GE_OP = 4;
+const int NE_OP = 5;
+const int NO_OP = 6;
 
 
 //
 // Attribute Types
 //
-typedef unsigned int AttrType;
-const unsigned int INT = 0;
-const unsigned int FLOAT = 1;
-const unsigned int STRING = 2;
+typedef int AttrType;
+const int INT = 0;
+const int FLOAT = 1;
+const int STRING = 2;
 
 
 //
 // Return Codes
 //
-typedef unsigned int RC;
+typedef int RC;
 
 /* RM */
-const unsigned int RM_MANAGER_OPENFAILED = 1;
-const unsigned int RM_MANAGER_CLOSEFAILED = RM_MANAGER_OPENFAILED + 1;
-const unsigned int RM_MANAGER_CREATEFAILED = RM_MANAGER_CLOSEFAILED + 1;
-const unsigned int RM_MANAGER_RECORDSIZEINVALID = RM_MANAGER_CREATEFAILED + 1;
-const unsigned int RM_RECORD_INVALID = RM_MANAGER_RECORDSIZEINVALID + 1;
-const unsigned int RM_FILEHANDLE_NORID = RM_RECORD_INVALID + 1;
-const unsigned int RM_FILESCAN_NONEXT = RM_FILEHANDLE_NORID + 1;
-const unsigned int RM_FILESCAN_NOTOPEN = RM_FILESCAN_NONEXT + 1;
+const int RM_MANAGER_CREATEFAILED = 1;
+const int RM_MANAGER_RECORDSIZEINVALID = RM_MANAGER_CREATEFAILED + 1;
+const int RM_RECORD_INVALID = RM_MANAGER_RECORDSIZEINVALID + 1;
+const int RM_FILESCAN_NONEXT = RM_RECORD_INVALID + 1;
+const int RM_FILESCAN_NOTOPEN = RM_FILESCAN_NONEXT + 1;
 
 
 //

@@ -8,7 +8,7 @@ RM_FileScan::RM_FileScan() : open(false) {}
 RM_FileScan::~RM_FileScan() {}
 
 
-RC RM_FileScan::openScan(const RM_FileHandle &fileHandle, AttrType attrType,
+void RM_FileScan::openScan(const RM_FileHandle &fileHandle, AttrType attrType,
                          int attrLength, int attrOffset, CompOp compOp, void *value) {
     this->fileHandle = &fileHandle;
     this->attrType = attrType;
@@ -18,11 +18,14 @@ RC RM_FileScan::openScan(const RM_FileHandle &fileHandle, AttrType attrType,
     this->value = value;
     start = true;
     open = true;
-    return 0;
 }
 
 
 RC RM_FileScan::closeScan() {
+    if (!open) {
+        return RM_FILESCAN_NOTOPEN;
+    }
+    start = true;
     open = false;
     return 0;
 }
@@ -33,22 +36,23 @@ RC RM_FileScan::getNextRec(RM_Record &rec) {
         return RM_FILESCAN_NOTOPEN;
     }
 
-    RC rc;
     while (true) {
         if (start) {
             start = false;
-            rc = fileHandle->getFirstRid(rid);
+            if (!fileHandle->getFirstRid(rid)) {
+                return RM_FILESCAN_NONEXT;
+            }
         } else {
             RID lastRid = rid;
-            rc = fileHandle->getNextRid(lastRid, rid);
+            if (!fileHandle->getNextRid(lastRid, rid)) {
+                return RM_FILESCAN_NONEXT;
+            }
         }
-        if (rc == RM_FILEHANDLE_NORID) {
-            return RM_FILESCAN_NONEXT;
+        fileHandle->getRec(rid, rec);
+        char *pData = rec.getData();
+        if (pData) {
+            pData += attrOffset;
         }
-        rc = fileHandle->getRec(rid, rec);
-        char *pData;
-        rc = rec.getData(pData);
-        pData += attrOffset;
         if (validate(pData, attrType, attrLength, compOp, value) {
             return 0;
         }

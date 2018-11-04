@@ -9,15 +9,15 @@
 class RM_Manager {
 
 public:
-    RM_Manager(BufPageManager &bpm);
+    RM_Manager(const BufPageManager &bpm);
     ~RM_Manager();
 
     RC createFile(const char *fileName, int recordSize);
-    RC openFile(const char *fileName, RM_FileHandle &fileHandle);
-    RC closeFile(RM_FileHandle &fileHandle);
+    bool openFile(const char *fileName, RM_FileHandle &fileHandle);
+    bool closeFile(RM_FileHandle &fileHandle);
 
 private:
-    BufPageManager &bpm;
+    BufPageManager *bpm;
 
 };
 
@@ -25,22 +25,29 @@ private:
 class RM_FileHandle {
 
 public:
-    RM_FileHandle(BufPageManager &bpm, unsigned int fileId);
+    RM_FileHandle(const BufPageManager *&bpm, int fileId);
     ~RM_FileHandle();
 
-    RC getRec(const RID &rid, RM_Record &rec) const;
-    RC insertRec(const char *pData, RID &rid);
-    RC deleteRec(const RID &rid);
-    RC updateRec(const RM_Record &rec);
-    RC getFirstRid(RID &rid) const;
-    RC getNextRid(const RID &lastRid, RID &rid) const;
+    bool getRec(const RID &rid, RM_Record &rec) const;
+    bool insertRec(const char *pData, RID &rid);
+    bool deleteRec(const RID &rid);
+    bool updateRec(const RM_Record &rec);
+    bool getFirstRid(RID &rid) const;
+    bool getNextRid(const RID &lastRid, RID &rid) const;
+    int getFileId() const;
 
 private:
+    PageNum getFreePage();
+    char *getPageData(PageNum pageNum, bool write) const;
+    bool insertFreePage(PageNum pageNum, bool isNew) const;
+    bool removeFreePage(PageNum pageNum) const;
+
     inline int getSlotOffset(SlotNum slotNum) {
         return sizeof(PageHeader) + slotNum * recordSize;
     }
-    BufPageManager &bpm;
-    unsigned int fileId;
+
+    BufPageManager *bpm;
+    const int fileId;
     int recordSize, maxRecordCnt, availPageCnt;
 
 };
@@ -55,6 +62,7 @@ public:
 
     char *getData();
     RID getRid();
+    void nullify();
 
 private:
     int size;
@@ -70,7 +78,7 @@ public:
     RM_FileScan();
     ~RM_FileScan();
 
-    RC openScan(const RM_FileHandle &fileHandle, AttrType attrType,
+    void openScan(const RM_FileHandle &fileHandle, AttrType attrType,
                 int attrLength, int attrOffset, CompOp compOp, void *value);
     RC getNextRec(RM_Record &rec);
     RC closeScan();
@@ -90,14 +98,14 @@ private:
 
 
 struct FileHeaderPage {
-    unsigned int recordSize, availPageCnt;
+    int recordSize, availPageCnt;
     PageNum firstFree, lastFree;
 };
 
 
 struct PageHeader {
     PageNum prevFree, nextFree;
-    Bits bitmap;
+    Bits bitmap, nullmap;
 };
 
 
