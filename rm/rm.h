@@ -1,23 +1,37 @@
 #ifndef RM_H
 #define RM_H
 
-#include "utils/defs.h"
+#include "../utils/defs.h"
 #include "rm_rid.h"
-#include "fs/bufmanager/BufPageManager.h"
+#include "../fs/bufmanager/BufPageManager.h"
 
 
-class RM_Manager {
+struct FileHeaderPage {
+    int recordSize, availPageCnt;
+    PageNum firstFree, lastFree;
+};
+
+
+struct PageHeader {
+    PageNum prevFree, nextFree;
+    Bits bitmap, nullmap;
+};
+
+
+class RM_Record {
 
 public:
-    RM_Manager(const BufPageManager &bpm);
-    ~RM_Manager();
+    RM_Record(int size, const RID &rid);
+    ~RM_Record();
 
-    RC createFile(const char *fileName, int recordSize);
-    bool openFile(const char *fileName, RM_FileHandle &fileHandle);
-    bool closeFile(RM_FileHandle &fileHandle);
+    char *getData() const;
+    RID getRid() const;
+    void nullify();
 
 private:
-    BufPageManager *bpm;
+    int size;
+    char *pData;
+    RID rid;
 
 };
 
@@ -25,7 +39,7 @@ private:
 class RM_FileHandle {
 
 public:
-    RM_FileHandle(const BufPageManager *&bpm, int fileId);
+    RM_FileHandle(BufPageManager *&bpm, int fileId);
     ~RM_FileHandle();
 
     bool getRec(const RID &rid, RM_Record &rec) const;
@@ -42,7 +56,7 @@ private:
     bool insertFreePage(PageNum pageNum, bool isNew) const;
     bool removeFreePage(PageNum pageNum) const;
 
-    inline int getSlotOffset(SlotNum slotNum) {
+    inline int getSlotOffset(SlotNum slotNum) const {
         return sizeof(PageHeader) + slotNum * recordSize;
     }
 
@@ -53,21 +67,18 @@ private:
 };
 
 
-class RM_Record {
+class RM_Manager {
 
 public:
-    RM_Record();
-    RM_Record(int size, const RID &rid);
-    ~RM_Record();
+    RM_Manager(BufPageManager &bpm);
+    ~RM_Manager();
 
-    char *getData();
-    RID getRid();
-    void nullify();
+    RC createFile(const char *fileName, int recordSize);
+    bool openFile(const char *fileName, RM_FileHandle *&fileHandle);
+    bool closeFile(RM_FileHandle &fileHandle);
 
 private:
-    int size;
-    char *pData;
-    RID rid;
+    BufPageManager *bpm;
 
 };
 
@@ -86,7 +97,7 @@ public:
 private:
     bool validate(char *pData, AttrType attrType, int attrLength,
                   CompOp compOp, void *value);
-    RM_FileHandle *fileHandle;
+    const RM_FileHandle *fileHandle;
     AttrType attrType;
     int attrLength, attrOffset;
     CompOp compOp;
@@ -94,18 +105,6 @@ private:
     RID rid;
     bool open, start;
 
-};
-
-
-struct FileHeaderPage {
-    int recordSize, availPageCnt;
-    PageNum firstFree, lastFree;
-};
-
-
-struct PageHeader {
-    PageNum prevFree, nextFree;
-    Bits bitmap, nullmap;
 };
 
 

@@ -53,7 +53,7 @@ RC RM_FileScan::getNextRec(RM_Record &rec) {
         if (pData) {
             pData += attrOffset;
         }
-        if (validate(pData, attrType, attrLength, compOp, value) {
+        if (validate(pData, attrType, attrLength, compOp, value)) {
             return 0;
         }
     }
@@ -98,7 +98,7 @@ bool RM_FileScan::validate(char *pData, AttrType attrType, int attrLength,
         char *u = pData, *v = (char *)value;
         int cmp = strncmp(u, v, attrLength);
         switch (compOp) {
-        case EQ_OP: return cmp == 0
+        case EQ_OP: return cmp == 0;
         case LT_OP: return cmp < 0;
         case GT_OP: return cmp > 0;
         case LE_OP: return cmp <= 0;

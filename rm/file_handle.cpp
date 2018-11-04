@@ -2,7 +2,7 @@
 #include "rm.h"
 
 
-RM_FileHandle::RM_FileHandle(const BufPageManager *&bpm, int fileId) : bpm(bpm), fileId(fileId) {
+RM_FileHandle::RM_FileHandle(BufPageManager *&bpm, int fileId) : bpm(bpm), fileId(fileId) {
     FileHeaderPage *header = (FileHeaderPage *)getPageData(0, false);
     recordSize = header->recordSize;
     maxRecordCnt = (PAGE_SIZE - sizeof(PageHeader)) / recordSize;
@@ -13,7 +13,7 @@ RM_FileHandle::RM_FileHandle(const BufPageManager *&bpm, int fileId) : bpm(bpm),
 RM_FileHandle::~RM_FileHandle() {}
 
 
-bool RM_FileHandle::getRec(const RID &rid, RM_Record &rec) {
+bool RM_FileHandle::getRec(const RID &rid, RM_Record &rec) const {
     PageNum pageNum = rid.getPageNum();
     SlotNum slotNum = rid.getSlotNum();
     char *page = getPageData(pageNum, false);
@@ -34,12 +34,9 @@ bool RM_FileHandle::getRec(const RID &rid, RM_Record &rec) {
 bool RM_FileHandle::insertRec(const char *pData, RID &rid) {
     PageNum pageNum = getFreePage();
     PageHeader *ph = (PageHeader *)getPageData(pageNum, false);
-    if (ph->bitmap & (1 << slotNum)) {
-        return false;
-    }
-    ph = (PageHeader *)getPageData(pageNum, true);
     SlotNum slotNum = 0;
-    for (Bits  = ph->bitmap; x & 1; (x <<= 1), ++slotNum);
+    for (Bits x = ph->bitmap; x & 1; (x <<= 1), ++slotNum);
+    ph = (PageHeader *)getPageData(pageNum, true);
     rid = RID(pageNum, slotNum);
     if (pData != NULL) {
         memcpy(((char *)ph) + getSlotOffset(slotNum), pData, recordSize);
@@ -92,14 +89,14 @@ bool RM_FileHandle::updateRec(const RM_Record &rec) {
 }
 
 
-bool RM_FileHandle::getFirstRid(RID &rid) {
-    RID tmpRid(1, -1)
+bool RM_FileHandle::getFirstRid(RID &rid) const {
+    RID tmpRid(1, -1);
     return getNextRid(tmpRid, rid);
 }
 
 
-bool RM_FileHandle::getNextRid(const RID &lastRid, RID &rid) {
-    PageNum pageNum = lastRid.getRid();
+bool RM_FileHandle::getNextRid(const RID &lastRid, RID &rid) const {
+    PageNum pageNum = lastRid.getPageNum();
     SlotNum slotNum = lastRid.getSlotNum() + 1;
     for (; pageNum <= availPageCnt; ++pageNum) {
         PageHeader *ph = (PageHeader *)getPageData(pageNum, false);
@@ -116,7 +113,7 @@ bool RM_FileHandle::getNextRid(const RID &lastRid, RID &rid) {
 }
 
 
-int RM_FileHandle::getFileId() {
+int RM_FileHandle::getFileId() const {
     return fileId;
 }
 
@@ -133,7 +130,7 @@ PageNum RM_FileHandle::getFreePage() {
 }
 
 
-char *RM_FileHandle::getPageData(PageNum pageNum, bool write) {
+char *RM_FileHandle::getPageData(PageNum pageNum, bool write) const {
     int index;
     char *bpmBuf = (char *)(bpm->getPage(fileId, pageNum, index));
     if (write) {
@@ -143,7 +140,7 @@ char *RM_FileHandle::getPageData(PageNum pageNum, bool write) {
 }
 
 
-bool RM_FileHandle::insertFreePage(PageNum pageNum, bool isNew) {
+bool RM_FileHandle::insertFreePage(PageNum pageNum, bool isNew) const {
     FileHeaderPage *header = (FileHeaderPage *)getPageData(0, true);
     PageHeader *ph = (PageHeader *)getPageData(pageNum, true);
     if (isNew) {
@@ -167,7 +164,7 @@ bool RM_FileHandle::insertFreePage(PageNum pageNum, bool isNew) {
 }
 
 
-bool RM_FileHandle::removeFreePage(PageNum pageNum) {
+bool RM_FileHandle::removeFreePage(PageNum pageNum) const {
     FileHeaderPage *header = (FileHeaderPage *)getPageData(0, true);
     PageHeader *ph = (PageHeader *)getPageData(pageNum, true);
     if (ph->prevFree == NO_PAGE && ph->nextFree == NO_PAGE && header->firstFree != pageNum) {

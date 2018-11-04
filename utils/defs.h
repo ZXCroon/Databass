@@ -50,4 +50,4 @@ const int RM_RECORD_MIN_SIZE = 32;
 const int RM_RECORD_MAX_SIZE = 2048;
 
 
-#endif DEF_H
+#endif

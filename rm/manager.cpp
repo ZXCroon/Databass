@@ -1,7 +1,7 @@
 #include "rm.h"
 
 
-RM_Manager::RM_Manager(const BufPageManager &bpm) : bpm(&bpm) {}
+RM_Manager::RM_Manager(BufPageManager &bpm) : bpm(&bpm) {}
 
 
 RM_Manager::~RM_Manager() {}
@@ -32,12 +32,12 @@ RC RM_Manager::createFile(const char *fileName, int recordSize) {
 }
 
 
-bool RM_Manager::openFile(const char *fileName, RM_FileHandle &fileHandle) {
+bool RM_Manager::openFile(const char *fileName, RM_FileHandle *&fileHandle) {
     int fileId;
     if (!bpm->fileManager->openFile(fileName, fileId)) {
         return false;
     }
-    fileHandle = RM_FileHandle(bpm, fileId);
+    fileHandle = new RM_FileHandle(bpm, fileId);
     return true;
 }
 

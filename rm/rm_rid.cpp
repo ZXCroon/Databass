@@ -4,14 +4,14 @@
 RID::RID() {}
 
 
-RID::RID(PageNum pageNum, SlotNum, slotNum) : pageNum(pageNum), slotNum(slotNum) {}
+RID::RID(PageNum pageNum, SlotNum slotNum) : pageNum(pageNum), slotNum(slotNum) {}
 
 
-PageNum RID::getPageNum() {
+PageNum RID::getPageNum() const {
     return pageNum;
 }
 
 
-SlotNum RID::getSlotNum() {
+SlotNum RID::getSlotNum() const {
     return slotNum;
 }

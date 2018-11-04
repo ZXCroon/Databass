@@ -1,9 +1,6 @@
 #include "rm.h"
 
 
-RM_Record::RM_Record() {}
-
-
 RM_Record::RM_Record(int size, const RID &rid) : size(size), rid(rid), pData(new char[size]) {}
 
 
@@ -14,12 +11,12 @@ RM_Record::~RM_Record() {
 }
 
 
-char *RM_Record::getData() {
+char *RM_Record::getData() const {
     return pData;
 }
 
 
-RID RM_Record::getRid() {
+RID RM_Record::getRid() const {
     return rid;
 }
 
