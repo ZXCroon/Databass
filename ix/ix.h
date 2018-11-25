@@ -6,15 +6,31 @@
 #include "../fs/bufmanager/BufPageManager.h"
 
 
+struct FileHeaderPage {
+    int recordSize, availPageCnt;
+    PageNum firstFree, lastFree;
+};
+
+
+struct PageHeader {
+    PageNum prevFree, nextFree;
+    Bits bitmap, nullmap;
+};
+
+
 class IX_IndexHandle {
 
 public:
-    IX_IndexHandle();
+    IX_IndexHandle(BufPageManager *bpm, int fileId);
     ~IX_IndexHandle();
 
     RC insertEntry(void *pData, const RID &rid);
     RC deleteEntry(void *pData, const RID &rid);
     RC forcePages();
+    int getFileId() const;
+
+private:
+    const int fileId;
 };
 
 class IX_IndexScan {
@@ -35,11 +51,12 @@ public:
     ~IX_Manager();
 
     RC createIndex(const char *filename, int indexNo, AttrType attrType, int attrLength);
-    RC destroyIndex(const char *filename, int indexNo);
-    RC openIndex(const char *filename, int indexNo, IX_IndexHandle &indexHandle);
-    RC closeIndex(IX_IndexHandle &indexHandle);
+    bool openIndex(const char *filename, int indexNo, IX_IndexHandle *&indexHandle);
+    bool closeIndex(IX_IndexHandle &indexHandle);
 
 private:
+    const char* getIndexFilename(const char* filename, int indexNo);
+
     BufPageManager *bpm;
 };
 
