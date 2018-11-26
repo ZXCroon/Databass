@@ -24,14 +24,18 @@ public:
     IX_IndexHandle(BufPageManager *bpm, int fileId);
     ~IX_IndexHandle();
 
-    RC insertEntry(void *pData, const RID &rid);
-    RC deleteEntry(void *pData, const RID &rid);
-    RC forcePages();
+    bool insertEntry(void *pData, const RID &rid);
+    bool deleteEntry(void *pData, const RID &rid);
     int getFileId() const;
 
 private:
+    PageNum getFreePage();
+    char *getPageData(PageNum pageNum, bool write) const;
+    bool insertFreePage(PageNum pageNum, bool isNew) const;
+    bool removeFreePage(PageNum pageNum) const;
     BufPageManager *bpm;
     const int fileId;
+    int recordSize, availPageCnt;
 };
 
 class IX_IndexScan {
