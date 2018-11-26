@@ -30,6 +30,7 @@ public:
     int getFileId() const;
 
 private:
+    BufPageManager *bpm;
     const int fileId;
 };
 
@@ -42,6 +43,15 @@ public:
     RC openScan(const IX_IndexHandle &indexHandle, CompOp compOp, void *value);
     RC getNextEntry(RID &rid);
     RC closeScan();
+
+private:
+    const IX_IndexHandle *indexHandle;
+    AttrType attrType;
+    int attrLength;
+    CompOp compOp;
+    void *value;
+    RID rid;
+    bool open, start;
 };
 
 class IX_Manager {
