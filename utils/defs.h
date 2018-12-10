@@ -9,6 +9,11 @@ typedef int SlotNum;
 typedef unsigned long long Bits;
 
 
+const int MAXNAME = 24;
+const int MAXATTRS = 40;
+const int MAXSTRINGLEN = 255;
+
+
 //
 // Comparison Operators
 //
