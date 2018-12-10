@@ -24,7 +24,7 @@ RC IX_IndexScan::openScan(const IX_IndexHandle &indexHandle, CompOp compOp, void
 }
 
 
-RC IX_IndexScan::closeScan::closeScan() {
+RC IX_IndexScan::closeScan() {
     if (!open) {
         return IX_INDEXSCAN_NOTOPEN;
     }

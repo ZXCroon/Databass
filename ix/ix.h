@@ -18,6 +18,40 @@ struct PageHeader {
 };
 
 
+class IX_Record {
+
+public:
+    IX_Record(int size, const RID &rid);
+    ~IX_Record();
+
+    char *getData() const;
+    RID getRid() const;
+    void nullify();
+
+private:
+    int size;
+    char *pData;
+    RID rid;
+
+};
+
+
+struct IX_Bnode {
+    bool isLeaf;
+    void *indexValue[4];
+    RID indexRID[4], child[5], father;
+    int size;
+} 
+
+
+struct IX_Leaf {
+    bool isLeaf;
+    void *value;
+    RID rid, pred, next, father;
+    int size;
+}
+
+
 class IX_IndexHandle {
 
 public:

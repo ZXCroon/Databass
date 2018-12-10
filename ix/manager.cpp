@@ -20,7 +20,7 @@ RC IX_Manager::createIndex(const char *filename, int indexNo, AttrType attrType,
     }
 
     FileHeaderPage hp;
-    /* to be updated */
+    /* todo recordsize to be updated */
     hp.recordSize = attrLength;
     hp.firstFree = hp.lastFree = NO_PAGE;
     hp.availPageCnt = 0;

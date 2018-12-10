@@ -12,11 +12,14 @@ IX_IndexHandle::~IX_IndexHandle() {}
 
 
 bool IX_IndexHandle::insertEntry(void *pData, const RID &rid) {
-    //todo B+ tree insert
+    //todo check if not an open index
+    //todo B+ tree insert(check if existed(*pData, rid))
+    
 }
 
 
 bool IX_IndexHandle::deleteEntry(void *pData, const RID &rid) {
+    //todo check if not an open index
     //todo B+ tree delete
 }
 
