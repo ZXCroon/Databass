@@ -42,10 +42,6 @@ bool SM_Manager::closeDb() {
 
 
 bool SM_Manager::createTable(const char *relName, int attrCount, AttrInfo *attributes) {
-    if (rmm->createFile(getPath(dbName, relName)) != 0) {
-        return false;
-    }
-    
     RID rid;
     if (getRelcatRid(relName, rid)) {
         return false;
@@ -78,7 +74,15 @@ bool SM_Manager::createTable(const char *relName, int attrCount, AttrInfo *attri
     }
 
     RID rid;
-    return relcatHandle->insertRec((char *)(&relcat), rid);
+    if (!relcatHandle->insertRec((char *)(&relcat), rid)) {
+        return false;
+    }
+
+    if (rmm->createFile(getPath(dbName, relName), relcat.tupleLength) != 0) {
+        return false;
+    }
+
+    return true;
 }
 
 
@@ -111,7 +115,8 @@ bool SM_Manager::createIndex(const char *relName, const char *attrName) {
     }
     RM_Record relRec;
     relcatHandle->getRec(rid, relRec);
-    RelcatLayout relcat = getRelcatFromRid(rid);
+    RelcatLayout relcat;
+    getRelcatFromRid(rid, relcat);
 
     RID rids[MAXATTRS];
     int ridCount;
@@ -120,7 +125,8 @@ bool SM_Manager::createIndex(const char *relName, const char *attrName) {
     }
     RM_Record attrRec;
     attrcatHandle->getRec(rids[0], attrRec);
-    AttrcatLayout attrcat = getAttrcatFromRid(rids[0]);
+    AttrcatLayout attrcat;
+    getAttrcatFromRid(rids[0], attrcat);
     if (attrcat.indexNo != -1) {
         return false;
     }
@@ -149,7 +155,8 @@ bool SM_Manager::dropIndex(const char *relName, const char *attrName) {
     }
     RM_Record attrRec;
     attrcatHandle->getRec(rids[0], attrRec);
-    AttrcatLayout attrcat = getAttrcatFromRid(rids[0]);
+    AttrcatLayout attrcat;
+    getAttrcatFromRid(rids[0], attrcat);
     if (attrcat.indexNo == -1) {
         return false;
     }
@@ -220,15 +227,15 @@ bool SM_Manager::getAttrcatRids(const char *relName, const char *attrName, RID *
 }
 
 
-RelcatLayout SM_Manager::getRelcatFromRid(const RID &rid) {
+void SM_Manager::getRelcatFromRid(const RID &rid, RelcatLayout &relcat) {
     RM_Record rec;
     relcatHandle->getRec(rid, rec);
-    return *((RelcatLayout *)(rec.getData()))
+    memcpy(&relcat, rec.getData, sizeof(RelcatLayout))
 }
 
 
-AttrcatLayout SM_Manager::getAttrcatFromRid(const RID &rid) {
+void SM_Manager::getAttrcatFromRid(const RID &rid, AttrcatLayout &attrcat) {
     RM_Record rec;
     attrcatHandle->getRec(rid, rec);
-    return *((AttrcatLayout *)(rec.getData()))
+    memcpy(&attrcat, rec.getData(), sizeof(AttrcatLayout))
 }

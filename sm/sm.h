@@ -41,6 +41,8 @@ struct AttrcatLayout {
 };
 
 
+class QL_Manager;
+
 class SM_Manager {
 
 public:
@@ -56,14 +58,15 @@ public:
     bool createIndex(const char *relName, const char *attrName);
     bool dropIndex(const char *relName, const char *attrName);
 
+    friend class QL_Manager;
+
 private:
     char *getPath(const char *dbName, const char *relName);
-    void padName(char name[MAXNAME + 1], char padding = ' ') {
+    void padName(char name[MAXNAME + 1], char padding = ' ');
 
     IX_Manager *ixm;
     RM_Manager *rmm;
     RM_FileHandle *relcatHandle, attrcatHandle;
-    char *dbNameBuf, *pathBuf;
     char dbNameBuf[MAXNAME + 1], pathBuf[MAXNAME * 2 + 10];
 };
 
