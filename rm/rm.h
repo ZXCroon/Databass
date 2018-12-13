@@ -14,7 +14,7 @@ struct FileHeaderPage {
 
 struct PageHeader {
     PageNum prevFree, nextFree;
-    Bits bitmap, nullmap;
+    Bits bitmap;
 };
 
 
@@ -27,7 +27,6 @@ public:
 
     char *getData() const;
     RID getRid() const;
-    void nullify();
 
 private:
     int size;

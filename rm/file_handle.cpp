@@ -19,11 +19,7 @@ bool RM_FileHandle::getRec(const RID &rid, RM_Record &rec) const {
     char *page = getPageData(pageNum, false);
     rec = RM_Record(recordSize, rid);
     if (((PageHeader *)page)->bitmap & (1 << slotNum)) {
-        if (((PageHeader *)page)->nullmap & (1 << slotNum)) {
-            rec.nullify();
-        } else {
-            memcpy(rec.getData(), page + getSlotOffset(slotNum), recordSize);
-        }
+        memcpy(rec.getData(), page + getSlotOffset(slotNum), recordSize);
         return true;
     } else {
         return false;
@@ -38,13 +34,7 @@ bool RM_FileHandle::insertRec(const char *pData, RID &rid) {
     for (Bits x = ph->bitmap; x & 1; (x <<= 1), ++slotNum);
     ph = (PageHeader *)getPageData(pageNum, true);
     rid = RID(pageNum, slotNum);
-    if (pData != NULL) {
-        memcpy(((char *)ph) + getSlotOffset(slotNum), pData, recordSize);
-        ph->nullmap &= ~(1 << slotNum);
-    } else {
-        memset(((char *)ph) + getSlotOffset(slotNum), 0, recordSize);
-        ph->nullmap |= (1 << slotNum);
-    }
+    memcpy(((char *)ph) + getSlotOffset(slotNum), pData, recordSize);
     ph->bitmap |= (1 << slotNum);
     if ((ph->bitmap & ((1 << maxRecordCnt) - 1)) == ((1 << maxRecordCnt) - 1)) {
         return removeFreePage(pageNum);
@@ -62,7 +52,6 @@ bool RM_FileHandle::deleteRec(const RID &rid) {
     }
     ph = (PageHeader *)getPageData(pageNum, true);
     ph->bitmap &= ~(1 << slotNum);
-    ph->nullmap &= ~(1 << slotNum);
     if (oriFull) {
         return insertFreePage(pageNum, false);
     }
@@ -80,10 +69,8 @@ bool RM_FileHandle::updateRec(const RM_Record &rec) {
     char *page = getPageData(pageNum, true);
     if (rec.getData() != NULL) {
         memcpy(page + getSlotOffset(slotNum), rec.getData(), recordSize);
-        ((PageHeader *)page)->nullmap &= ~(1 << slotNum);
     } else {
-        memset(page + getSlotOffset(slotNum), 0, recordSize);
-        ((PageHeader *)page)->nullmap |= (1 << slotNum);
+        return false;
     }
     return true;
 }

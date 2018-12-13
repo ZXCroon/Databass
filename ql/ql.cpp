@@ -2,6 +2,13 @@
 #include "ql.h"
 
 
+QL_Manager::QL_Manager(SM_Manager *&smm, IX_Manager *&ixm, RM_Manager *&rmm) :
+        smm(smm), ixm(ixm), rmm(rmm) {}
+
+
+QL_Manager::~QL_Manager() {}
+
+
 void QL_Manager::insert(const char *relName, int nValues, const Value values[]) {
     Catalog cat;
     getCatalog(relName, cat);
@@ -13,7 +20,7 @@ void QL_Manager::insert(const char *relName, int nValues, const Value values[]) 
     rmm->openFile(getPath(dbName, relName), handle);
     char *data = new char[cat.relcat.tupleLength];
     for (int i = 0; i < cat.relcat.attrCount) {
-        memcpy(data + cat.attrcats[i].offset, values[i].value, cat.attrcats[i].attrLength);
+        memcpy(data + cat.attrcats[i].offset, padValue(values[i].value), cat.attrcats[i].attrLength);
     }
     RID rid;
     rmm->insertRec(data, rid);
@@ -45,7 +52,7 @@ void QL_Manager::del(const char *relName, int nConditions, const Condition condi
 
     if (strat.strat1.attrcat != NULL) {
         ixm->openIndex(getPath(dbName, relation), strat.strat1.attrcat->indexNo, ixHandle);
-        indexScan.openScan(ixHandle, strat.strat1.compOp, strat.strat1.value);
+        indexScan.openScan(ixHandle, strat.strat1.compOp, padValue(strat.strat1.value));
         while (true) {
             RC rc = indexScan.getNextEntry(rid);
             if (rc == IX_INDEXSCAN_NONEXT) {
@@ -106,7 +113,7 @@ void QL_Manager::update(const char *relName, const RelAttr &updAttr, const int b
 
     if (strat.strat1.attrcat != NULL) {
         ixm->openIndex(getPath(dbName, relation), strat.strat1.attrcat->indexNo, ixHandle);
-        indexScan.openScan(ixHandle, strat.strat1.compOp, strat.strat1.value);
+        indexScan.openScan(ixHandle, strat.strat1.compOp, padValue(strat.strat1.value));
         while (true) {
             RC rc = indexScan.getNextEntry(rid);
             if (rc == IX_INDEXSCAN_NONEXT) {
@@ -151,7 +158,7 @@ void QL_Manager::update(const char *relName, const RelAttr &updAttr, const int b
             handle.getRec(rids[k], rec);
             ixHandle.deleteEntry(rec.getData() + updAc->offset, rids[k]);
             if (bIsValue) {
-                memcpy(rec.getData() + updAc->offset, rhsValue.value, updAc->attrLength);
+                memcpy(rec.getData() + updAc->offset, padValue(rhsValue.value), updAc->attrLength);
             } else {
                 memcpy(rec.getData() + updAc->offset, rec.getData() + rhsAc->offset, updAc->attrLength);
             }
@@ -162,7 +169,7 @@ void QL_Manager::update(const char *relName, const RelAttr &updAttr, const int b
     for (int i = 0; i < rids.size(); ++i) {
         handle.getRec(rids[k], rec);
         if (bIsValue) {
-            memcpy(rec.getData() + updAc->offset, rhsValue.value, updAc->attrLength);
+            memcpy(rec.getData() + updAc->offset, padValue(rhsValue.value), updAc->attrLength);
         } else {
             memcpy(rec.getData() + updAc->offset, rec.getData() + rhsAc->offset, updAc->attrLength);
         }
@@ -213,4 +220,22 @@ char *QL_Manager::getPath(const char *dbName, const char *relName) {
     strcat(pathBuf, "/");
     strcat(pathBuf, relName);
     return pathBuf;
+}
+
+
+void *QL_Manager::padValue(const void *value, AttrType attrType, int attrLength) {
+    if (value == NULL) {
+        memset(valBuf, 0, attrLength);
+        return valBuf;
+    }
+    if (attrType != STRING) {
+        return value;
+    }
+    int len = strlen((const char *)value)
+    memset(valBuf, ' ', attrLength);
+    strncpy(valBuf, value, attrLength);
+    if (len < attrLength) {
+        valBuf[len] = ' ';
+    }
+    return valBuf;
 }

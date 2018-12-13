@@ -2,10 +2,12 @@
 #include "sm.h"
 
 
-SM_Manager::SM_Manager(const IX_Manager *&ixm, const RM_Manager *&rmm) : ixm(ixm), rmm(rmm) {}
+SM_Manager::SM_Manager(const IX_Manager *&ixm, const RM_Manager *&rmm) : ixm(ixm), rmm(rmm), relcatHandle(NULL), attrcatHandle(NULL) {}
 
 
-SM_Manager::~SM_Manager() {}
+SM_Manager::~SM_Manager() {
+    closeDb();
+}
 
 
 bool SM_Manager::createDb(const char *dbName) {
@@ -31,13 +33,23 @@ bool SM_Manager::destroyDb(const char *dbName) {
 
 
 bool SM_Manager::openDb(const char *dbName) {
-    strcpy(dbNameBuf, dbName);
+    if (relcatHandle != NULL || attrcatHandle != NULL) {
+        if (!closeDb()) {
+            return false;
+        }
+    }
     return rmm->openFile(getPath(dbName, "relcat"), relcatHandle) && rmm->openFile(getPath(dbName, "attrcat"), attrcatHandle);
 }
 
 
 bool SM_Manager::closeDb() {
-    return rmm->closeFile(*relcatHandle) && rmm->closeFile(*attrcatHandle)
+    if (relcatHandle == NULL || attrcatHandle == NULL) {
+        return false;
+    }
+    if (!(rmm->closeFile(*relcatHandle) && rmm->closeFile(*attrcatHandle))) {
+        return false;
+    }
+    relcatHandle = attrcatHandle = NULL;
 }
 
 
@@ -66,36 +78,27 @@ bool SM_Manager::createTable(const char *relName, int attrCount, AttrInfo *attri
         attrcat.indexNo = -1;
 
         RID rid;
-        if (!attrcatHandle->insertRec((char *)(&attrcat), rid)) {
-            return false;
-        }
+        attrcatHandle->insertRec((char *)(&attrcat), rid);
 
         relcat.tupleLength += attr->attrLength;
     }
 
     RID rid;
-    if (!relcatHandle->insertRec((char *)(&relcat), rid)) {
-        return false;
-    }
+    relcatHandle->insertRec((char *)(&relcat), rid);
 
-    if (rmm->createFile(getPath(dbName, relName), relcat.tupleLength) != 0) {
-        return false;
-    }
+    rmm->createFile(getPath(dbName, relName), relcat.tupleLength);
 
     return true;
 }
 
 
 bool SM_Manager::dropTable(const char *relName) {
-    if (!rmm->deleteFile(getPath(dbName, relName))) {
-        return false;
-    }
-
     RID rid;
     if (!getRelcatRid(relName, rid)) {
         return false;
     }
     relcatHandle->deleteRec(rid);
+    rmm->deleteFile(getPath(dbName, relName));
 
     RID rids[MAXATTRS];
     int ridCount;
@@ -140,9 +143,7 @@ bool SM_Manager::createIndex(const char *relName, const char *attrName) {
     relcatHandle->updateRec(relRec);
     attrcatHandle->updateRec(attrRec);
 
-    if (ixm->createIndex(getPath(dbName, relName), attrcat.indexNo, attrcat.attrType, attrcat.attrLength) != 0) {
-        return false;
-    }
+    createIndex(getPath(dbName, relName), attrcat.indexNo, attrcat.attrType, attrcat.attrLength);
     return true;
 }
 
@@ -165,9 +166,7 @@ bool SM_Manager::dropIndex(const char *relName, const char *attrName) {
     memcpy(attrRec.getData(), (char *)attrcat, sizeof(AttrcatLayout));
     attrcatHandle->updateRec(attrRec);
 
-    if (ixm->deleteIndex(getPath(dbName, relName), attrcat.indexNo)) {
-        return false;
-    }
+    deleteIndex(getPath(dbName, relName), attrcat.indexNo);
     return true;
 }
 

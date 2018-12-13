@@ -5,13 +5,28 @@
 #include "defs.h"
 
 
+bool isNull(void *value, int attrLength) {
+    for (int i = 0; i < attrLength; ++i) {
+        if (*((char *)value) != 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
 bool validate(char *pData, AttrType attrType, int attrLength,
                            CompOp compOp, void *value) {
     if (compOp == NO_OP) {
         return true;
     }
     if (pData == NULL) {
-        return compOp == IS_OP && value == NULL;
+        return false;
+    }
+
+    // ensure in top levels that IS/== is used correctly
+    if (compOp == IS_OP) {
+        compOp = EQ_OP;
     }
 
     switch (attrType) {

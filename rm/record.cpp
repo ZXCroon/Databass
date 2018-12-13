@@ -22,9 +22,3 @@ char *RM_Record::getData() const {
 RID RM_Record::getRid() const {
     return rid;
 }
-
-
-void RM_Record::nullify() {
-    delete[] pData;
-    pData = NULL;
-}

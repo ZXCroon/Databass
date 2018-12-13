@@ -44,7 +44,7 @@ RC QL_Manager::select(int nSelAttrs, const RelAttr selAttrs[],
         std::vector<RID> rids1, rids2;
         if (strat.strat1.attrcat != NULL) {
             ixm->openIndex(getPath(dbName, relation1), strat.strat1.attrcat->indexNo, ixHandle1);
-            indexScan.openScan(ixHandle1, strat.strat1.compOp, strat.strat1.value);
+            indexScan.openScan(ixHandle1, strat.strat1.compOp, padValue(strat.strat1.value));
             while (true) {
                 RC rc = indexScan.getNextEntry(rid);
                 if (rc == IX_INDEXSCAN_NONEXT) {
@@ -74,7 +74,7 @@ RC QL_Manager::select(int nSelAttrs, const RelAttr selAttrs[],
         if (joinType != NO_JOIN) {
             if (strat.strat2.attrcat != NULL) {
                 ixm->openIndex(getPath(dbName, relation2), strat.strat2.attrcat->indexNo, ixHandle2);
-                indexScan.openScan(ixHandle2, strat.strat2.compOp, strat.strat2.value);
+                indexScan.openScan(ixHandle2, strat.strat2.compOp, padValue(strat.strat2.value));
                 while (true) {
                     RC rc = indexScan.getNextEntry(rid);
                     if (rc == IX_INDEXSCAN_NONEXT) {
@@ -156,7 +156,7 @@ bool QL_Manager::singleValidate(const char *relation, const Catalog &cat, int nC
                 return false;
             }
         }
-        else if (!validate(rec.getData() + ac->offset, ac->attrType, ac->attrLength, cond.op, cond.rhsValue.value)) {
+        else if (!validate(rec.getData() + ac->offset, ac->attrType, ac->attrLength, cond.op, padValue(cond.rhsValue.value))) {
             return false;
         }
     }

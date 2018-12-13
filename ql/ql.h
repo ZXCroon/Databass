@@ -52,7 +52,7 @@ struct SelectStrategy {
 class QL_Manager {
 
 public:
-    QL_Manager(SM_Manager &smm, IX_Manager &ixm, RM_Manager &rmm);
+    QL_Manager(SM_Manager *&smm, IX_Manager *&ixm, RM_Manager *&rmm);
     ~QL_Manager();
 
     RC select(int nSelAttrs, const RelAttr selAttrs[],
@@ -68,9 +68,13 @@ public:
 
 private:
     char *getPath(const char *dbName, const char *relName);
-    void padName(char name[MAXNAME + 1], char padding = ' ');
+    void *padValue(const void *value, AttrType attrType, int attrLength);
 
+    SM_Manager *smm;
+    IX_Manager *ixm;
+    RM_Manager *rmm;
     char *dbName;
+    char valBuf[MAXSTRINGLEN];
     char pathBuf[MAXNAME * 2 + 10];
 };
 

@@ -66,8 +66,8 @@ private:
 
     IX_Manager *ixm;
     RM_Manager *rmm;
-    RM_FileHandle *relcatHandle, attrcatHandle;
-    char dbNameBuf[MAXNAME + 1], pathBuf[MAXNAME * 2 + 10];
+    RM_FileHandle *relcatHandle, *attrcatHandle;
+    char pathBuf[MAXNAME * 2 + 10];
 };
 
 
