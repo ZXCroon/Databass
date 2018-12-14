@@ -31,6 +31,56 @@ bool IX_IndexHandle::insertEntry(void *pData, const RID &rid) {
 bool IX_IndexHandle::deleteEntry(void *pData, const RID &rid) {
     //todo check if not an open index
     //todo B+ tree delete
+    RID res;
+    int pos;
+    assert(findInsertPos(root, pData, rid, res, pos) == true);
+    
+    // todo get record of res in node
+    for (int i = pos; i < node.size - 1; ++i) {
+        node.indexValue[i] = node.indexValue[i + 1];
+        node.indexRID[i] = node.indexRID[i + 1];
+    }
+    node.indexValue[node.size] = NULL;
+    node.indexRID[node.size] = RID(-1, -1);
+    --node.size;
+    // todo write node to RID: res
+
+    // update indexValue in ancestor node
+    if (pos == 0 && node.size > 0 && res != root) {
+        next_value = node.indexValue[0];
+        while (node.father != root) {
+            res = node.father;
+            // todo get record of res in node
+            for (int i = 0; i < node.size; ++i)
+            if (node.indexValue[i] == pData) {
+                node.indexValue[i] = next_value;
+                // todo write node to RID: res
+                return true;
+            }
+        }
+        return true;
+    }
+
+    if (node.size == 0) {
+        RID prev = node.prev;
+        RID next = node.next;
+        if (prev != RID(-1, -1)) {
+            // todo get record of prev in node
+            node.next = next;
+            // todo write node to RID: prev
+        }
+        if (next != RID(-1, -1)) {
+            // todo get record of next in node
+            node.prev = prev;
+            // todo write node to RID: next
+        }
+
+        // todo delete RID: res
+
+        deleteNode(node.father, res);
+    }
+
+    return true;
 }
 
 
@@ -54,19 +104,22 @@ int IX_IndexHandle::getAttrLength() const {
 }
 
 
-
 bool IX_IndexHandle::findInsertPos(RID u, void *pData, const RID &rid, RID &res, int &pos) const {
     // todo get the Record of RID u in node
     if (node.isLeaf == true) {
         res = u;
-        for (int i = 0; i < node.size; ++i)
-        // implement indexEqual
-        pos = node.size;
-        if (indexEQ(pData, rid, indexValue[i], indexRID[i])){
-            return false;
-        if (pos == node.size && indexLT(pData, rid, indexValue[i], indexRID[i])) {
-            pos = i;
+        for (int i = 0; i < node.size; ++i) {
+            // todo implement indexEqual
+            if (indexEQ(pData, rid, indexValue[i], indexRID[i])) {
+                pos = i;
+                return false;
+            }
+            if (indexLT(pData, rid, indexValue[i], indexRID[i])) {
+                pos = i;
+                return true;
+            }
         }
+        pos = node.size;
         return true;
     }
     for (int i = 0; i < node.size; ++i)
@@ -155,6 +208,32 @@ void IX_IndexHandle::searchNext(RID &rid, int &pos, bool direct) const {
         else {
             ++pos;
         }
+    }
+}
+
+
+void IX_IndexHandle::deleteNode(RID &u, RID & v) {
+    // todo get Record of RID u in node
+    for (int pos = 0; pos <= node.size; ++pos)
+    if (node.indexRID[pos] == v) {
+        for (int i = pos; i < node.size; ++i) {
+            node.indexRID[i] = node.indexRID[i + 1];
+        }
+        node.indexRID[node.size] = RID(-1, -1);
+
+        for (int i = max(pos - 1, 0); i < node.size - 1; ++i) {
+            node.indexValue[i] = node.indexValue[i + 1];
+        }
+        node.indexValue[node.size - 1] = NULL;
+
+        node.size--;
+        // todo write node to RID: u
+        break;
+    }
+
+    if (node.size == 0) {
+        // todo delete record RID: u
+        deleteNode(node.father, u);
     }
 }
 

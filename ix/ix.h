@@ -1,6 +1,8 @@
 #ifndef IX_H
 #define IX_H
 
+#include <assert.h>
+
 #include "../utils/defs.h"
 #include "../rm/rm_rid.h"
 #include "../fs/bufmanager/BufPageManager.h"
@@ -78,6 +80,8 @@ public:
     void searchGE(RID u, void *pData, const RID &rid, RID &res, int &pos) const;
     void searchLT(RID u, void *pData, const RID &rid, RID &res, int &pos) const;
     void searchNext(RID &rid, int &pos, bool direct) const;
+
+    void deleteNode(RID &u, RID & v);
 
 private:
     PageNum getFreePage();
