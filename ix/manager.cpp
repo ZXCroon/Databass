@@ -20,10 +20,10 @@ RC IX_Manager::createIndex(const char *filename, int indexNo, AttrType attrType,
     }
 
     FileHeaderPage hp;
-    /* todo recordsize to be updated */
-    hp.recordSize = attrLength;
+    hp.recordSize = sizeof(IX_Bnode);
     hp.firstFree = hp.lastFree = NO_PAGE;
     hp.availPageCnt = 0;
+    hp.root = RID(-1, -1);
     if (bpm->fileManager->writePage(fileId, 0, (BufType)(&hp), 0) != 0 or
         bpm->fileManager->closeFile(fileId) != 0) {
             return IX_MANAGER_CREATEFAILED;

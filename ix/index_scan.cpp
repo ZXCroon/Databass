@@ -13,11 +13,34 @@ RC IX_IndexScan::openScan(const IX_IndexHandle &indexHandle, CompOp compOp, void
         return IX_INDEXSCAN_INVALIDOP;
     }
     this->indexHandle = &indexHandle;
-    //todo after IX_IndexHandle
-    // this->attrType = indexHandle.
-    // this->attrLength = indexHandle.
-    this->compOp = compOp;
-    this->value = value;
+    RID none(-1, -1);
+    RID inf(100000000, 100000000);
+    switch (compOp){
+        case EQ_OP:
+            indexHandle.searchGE(indexHandle.getRoot(), value, none, res, pos);
+            direct = 1;
+            break;
+        case LT_OP:
+            indexHandle.searchLT(indexHandle.getRoot(), value, none, res, pos);
+            direct = 0;
+            break;
+        case GT_OP:
+            indexHandle.searchGE(indexHandle.getRoot(), value, inf, res, pos);
+            direct = 1;
+            break;
+        case LE_OP:
+            indexHandle.searchLT(indexHandle.getRoot(), value, inf, res, pos);
+            direct = 0;
+            break;
+        case GE_OP:
+            indexHandle.searchGE(indexHandle.getRoot(), value, none, res, pos);
+            direct = 1;
+            break;
+        case NO_OP:
+            indexHandle.searchFirst(indexHandle.getRoot(), res, pos);
+            direct = 1;
+            break;
+    }
     start = true;
     open = true;
     return 0;
@@ -38,6 +61,11 @@ RC IX_IndexScan::getNextEntry(RID &rid) {
     if (!open) {
         return IX_INDEXSCAN_NOTOPEN;
     }
-    //todo B+ tree search
+    if (pos == -1) {
+        return IX_INDEXSCAN_EOF;
+    }
+    //todo get the record of res in node
+    rid = node.indexRID[pos];
+    indexHandle->searchNext(res, pos, direct);
     return 0;
 }

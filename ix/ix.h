@@ -8,6 +8,7 @@
 
 struct FileHeaderPage {
     int recordSize, availPageCnt;
+    RID root;
     PageNum firstFree, lastFree;
 };
 
@@ -39,17 +40,24 @@ private:
 struct IX_Bnode {
     bool isLeaf;
     void *indexValue[4];
-    RID indexRID[4], child[5], father;
+    RID indexRID[4], child[5], father, prev, next;
     int size;
-} 
 
-
-struct IX_Leaf {
-    bool isLeaf;
-    void *value;
-    RID rid, pred, next, father;
-    int size;
-}
+    IX_Bnode() {
+        isLeaf = true;
+        for (int i = 0; i < 4; ++i) {
+            indexValue[i] = NULL;
+            indexRID[i] = RID(-1, -1);
+        }
+        for (int i = 0; i < 5; ++i) {
+            child[i] = RID(-1, -1);
+        }
+        father = RID(-1, -1);
+        prev = RID(-1, -1);
+        next = RID(-1, -1);
+        size = 0;
+    }
+};
 
 
 class IX_IndexHandle {
@@ -61,15 +69,28 @@ public:
     bool insertEntry(void *pData, const RID &rid);
     bool deleteEntry(void *pData, const RID &rid);
     int getFileId() const;
+    RID getRoot() const;
+    AttrType getAttrType() const;
+    int getAttrLength() const;
+
+    bool findInsertPos(RID u, void *pData, const RID &rid, RID &res, int &pos) const;
+    void searchFirst(RID u, RID &res, int &pos) const;
+    void searchGE(RID u, void *pData, const RID &rid, RID &res, int &pos) const;
+    void searchLT(RID u, void *pData, const RID &rid, RID &res, int &pos) const;
+    void searchNext(RID &rid, int &pos, bool direct) const;
 
 private:
     PageNum getFreePage();
     char *getPageData(PageNum pageNum, bool write) const;
     bool insertFreePage(PageNum pageNum, bool isNew) const;
     bool removeFreePage(PageNum pageNum) const;
+
     BufPageManager *bpm;
     const int fileId;
     int recordSize, availPageCnt;
+    AttrType attrType;
+    int attrLength;
+    RID root;
 };
 
 class IX_IndexScan {
@@ -84,11 +105,9 @@ public:
 
 private:
     const IX_IndexHandle *indexHandle;
-    AttrType attrType;
-    int attrLength;
-    CompOp compOp;
-    void *value;
-    RID rid;
+    RID res;
+    int pos;
+    int direct;
     bool open, start;
 };
 
