@@ -24,41 +24,34 @@ struct PageHeader {
 class IX_Record {
 
 public:
-    IX_Record(int size, const RID &rid);
+    IX_Record(int size, int indexValueSize, const RID &rid);
     ~IX_Record();
+
+    bool *getIsLeaf() const;
+    int *getSize() const;
+    RID *getIndexRID(int i) const;
+    RID *getChild(int i) const;
+    RID *getFather() const;
+    RID *getPrev() const;
+    RID *getNext() const;
+    void *getIndexValue(int i) const;
 
     char *getData() const;
     RID getRid() const;
     void nullify();
 
 private:
-    int size;
+    int size, indexValueSize;
     char *pData;
     RID rid;
-
 };
 
-
+// the alignment of pData: bool isLeaf; int size(of indexes); RID indexRID[4], child[5], father, prev, next; AttrType indexValue
 struct IX_Bnode {
     bool isLeaf;
-    void *indexValue[4];
-    RID indexRID[4], child[5], father, prev, next;
     int size;
-
-    IX_Bnode() {
-        isLeaf = true;
-        for (int i = 0; i < 4; ++i) {
-            indexValue[i] = NULL;
-            indexRID[i] = RID(-1, -1);
-        }
-        for (int i = 0; i < 5; ++i) {
-            child[i] = RID(-1, -1);
-        }
-        father = RID(-1, -1);
-        prev = RID(-1, -1);
-        next = RID(-1, -1);
-        size = 0;
-    }
+    RID indexRID[4], child[5], father, prev, next;
+    void *indexValue[4];
 };
 
 
@@ -70,7 +63,13 @@ public:
 
     bool insertEntry(void *pData, const RID &rid);
     bool deleteEntry(void *pData, const RID &rid);
+
+    bool getRec(const RID &rid, IX_Record &rec) const;
+    bool insertRec(const char *pData, RID &rid);
+    bool deleteRec(const RID &rid);
+    bool updateRec(const IX_Record &rec);
     int getFileId() const;
+
     RID getRoot() const;
     AttrType getAttrType() const;
     int getAttrLength() const;
@@ -80,7 +79,6 @@ public:
     void searchGE(RID u, void *pData, const RID &rid, RID &res, int &pos) const;
     void searchLT(RID u, void *pData, const RID &rid, RID &res, int &pos) const;
     void searchNext(RID &rid, int &pos, bool direct) const;
-
     void deleteNode(RID &u, RID & v);
 
 private:
@@ -89,9 +87,13 @@ private:
     bool insertFreePage(PageNum pageNum, bool isNew) const;
     bool removeFreePage(PageNum pageNum) const;
 
+    inline int getSlotOffset(SlotNum slotNum) const {
+        return sizeof(PageHeader) + slotNum * recordSize;
+    }
+
     BufPageManager *bpm;
     const int fileId;
-    int recordSize, availPageCnt;
+    int recordSize, maxRecordCnt, availPageCnt;
     AttrType attrType;
     int attrLength;
     RID root;
@@ -122,6 +124,7 @@ public:
     ~IX_Manager();
 
     RC createIndex(const char *filename, int indexNo, AttrType attrType, int attrLength);
+    RC destroyIndex(const char *filename, int indexNo);
     bool openIndex(const char *filename, int indexNo, IX_IndexHandle *&indexHandle);
     bool closeIndex(IX_IndexHandle &indexHandle);
 
