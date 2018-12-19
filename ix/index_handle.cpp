@@ -2,10 +2,13 @@
 
 
 IX_IndexHandle::IX_IndexHandle(BufPageMmanager *&bpm, int fieldId) : bpm(bpm), fieldId(fieldId) {
-    FileHeaderPage *header = (FileHeaderPage *)getPageData(0, false);
+    IX_FileHeaderPage *header = (IX_FileHeaderPage *)getPageData(0, false);
     recordSize = header->recordSize;
+    maxRecordCnt = (PAGE_SIZE - sizeof(IX_PageHeader)) / recordSize;
     availPageCnt = header->availPageCnt;
     root = header->root;
+    attrType = header->attrType;
+    attrLength = header->attrLength;
 }
 
 
@@ -25,6 +28,35 @@ bool IX_IndexHandle::insertEntry(void *pData, const RID &rid) {
         return false;
     }
     //todo B+ tree insert
+    
+    // todo get the Record of res in node
+    if (node.size < 4) {
+        for (int i = node.size; i > pos; --i) {
+            node.indexValue[i] = node.indexValue[i - 1];
+            node.indexRID[i] = node.indexRID[i - 1];
+        }
+        node.indexValue[pos] = pData;
+        node.indexRID[pos] = rid;
+        // todo write node in RID: res
+
+        // update index
+        if (pos == 0 && res != root) {
+            void *replaced = node.indexValue[1];
+            while (node.father != root) {
+                res = node.father;
+                // todo get record of res in node
+                for (int i = 0; i < node.size; ++i)
+                    if (node.indexValue[i] == replaced) {
+                node.indexValue[i] = next_value;
+                // todo write node to RID: res
+                return true;
+            }
+            }
+        }
+        return true;
+    }
+
+    return true;
 }
 
 
@@ -47,7 +79,7 @@ bool IX_IndexHandle::deleteEntry(void *pData, const RID &rid) {
 
     // update indexValue in ancestor node
     if (pos == 0 && node.size > 0 && res != root) {
-        next_value = node.indexValue[0];
+        void *next_value = node.indexValue[0];
         while (node.father != root) {
             res = node.father;
             // todo get record of res in node
@@ -239,10 +271,10 @@ void IX_IndexHandle::deleteNode(RID &u, RID & v) {
 
 
 PageNum IX_IndexHandle::getFreePage() {
-    FileHeaderPage *header = (FileHeaderPage *)getPageData(0, false);
+    IX_FileHeaderPage *header = (IX_FileHeaderPage *)getPageData(0, false);
     if (header->firstFree == NO_PAGE) {
         ++availPageCnt;
-        header = (FileHeaderPage *)getPageData(0, true);
+        header = (IX_FileHeaderPage *)getPageData(0, true);
         ++header->availPageCnt;
         insertFreePage(header->availPageCnt, true);
     }
@@ -260,8 +292,8 @@ char *IX_IndexHandle::getPageData(PageNum pageNum, bool write) const {
 }
 
 bool IX_IndexHandle::insertFreePage(PageNum pageNum, bool isNew) const {
-    FileHeaderPage *header = (FileHeaderPage *)getPageData(0, true);
-    PageHeader *ph = (PageHeader *)getPageData(pageNum, true);
+    IX_FileHeaderPage *header = (IX_FileHeaderPage *)getPageData(0, true);
+    IX_PageHeader *ph = (IX_PageHeader *)getPageData(pageNum, true);
     if (isNew) {
         ph->bitmap = 0;
         ph->prevFree = ph->nextFree = NO_PAGE;
@@ -273,7 +305,7 @@ bool IX_IndexHandle::insertFreePage(PageNum pageNum, bool isNew) const {
         if (header->firstFree == pageNum || ph->prevFree != NO_PAGE || ph->nextFree != NO_PAGE) {
             return false;
         }
-        PageHeader *fph = (PageHeader *)getPageData(header->firstFree, true);
+        IX_PageHeader *fph = (IX_PageHeader *)getPageData(header->firstFree, true);
         fph->prevFree = pageNum;
         ph->nextFree = header->firstFree;
         ph->prevFree = NO_PAGE;
@@ -284,22 +316,22 @@ bool IX_IndexHandle::insertFreePage(PageNum pageNum, bool isNew) const {
 
 
 bool IX_IndexHandle::removeFreePage(PageNum) const {
-    FileHeaderPage *header = (FileHeaderPage *)getPageData(0, true);
-    PageHeader *ph = (PageHeader *)getPageData(pageNum, true);
+    IX_FileHeaderPage *header = (IX_FileHeaderPage *)getPageData(0, true);
+    IX_PageHeader *ph = (IX_PageHeader *)getPageData(pageNum, true);
     if (ph->prevFree == NO_PAGE && ph->nextFree == NO_PAGE && header->fistFree != pageNum) {
         return false;
     }
     if (ph->prevFree == NO_PAGE) {
         head->firstFree = ph->nextFree;
     } else {
-        PageHeader *pph = (PageHeader *)getPageData(ph->prevFree, true);
+        IX_PageHeader *pph = (IX_PageHeader *)getPageData(ph->prevFree, true);
         pph->nextFree = ph->nextFree;
         ph->prevFree = NO_PAGE;
     }
     if (ph->nextFree == NO_PAGE) {
         header->lastFree = ph->prevFree;
     } else {
-        PageHeader *nph = (PageHeader *)getPageData(ph->nextFree, true);
+        IX_PageHeader *nph = (IX_PageHeader *)getPageData(ph->nextFree, true);
         nph->prevFree = ph->prevFree;
         ph->nextFree = NO_PAGE;
     }

@@ -4,7 +4,6 @@
 IX_IndexScan::IX_IndexScan() : open(false) {}
 
 
-
 IX_IndexScan::~IX_IndexScan() {}
 
 

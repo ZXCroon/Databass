@@ -19,11 +19,13 @@ RC IX_Manager::createIndex(const char *filename, int indexNo, AttrType attrType,
         return IX_MANAGER_CREATEFAILED;
     }
 
-    FileHeaderPage hp;
+    IX_FileHeaderPage hp;
     hp.recordSize = sizeof(int) + sizeof(int) + sizeof(RID) * (4 + 5 + 1 + 1 + 1) + attrLength * 4;
     hp.firstFree = hp.lastFree = NO_PAGE;
     hp.availPageCnt = 0;
     hp.root = RID(-1, -1);
+    hp.attrType = attrType;
+    hp.attrLength = attrLength;
     if (bpm->fileManager->writePage(fileId, 0, (BufType)(&hp), 0) != 0 or
         bpm->fileManager->closeFile(fileId) != 0) {
             return IX_MANAGER_CREATEFAILED;

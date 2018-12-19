@@ -8,14 +8,16 @@
 #include "../fs/bufmanager/BufPageManager.h"
 
 
-struct FileHeaderPage {
+struct IX_FileHeaderPage {
     int recordSize, availPageCnt;
     RID root;
+    AttrType attrType;
+    int attrLength;
     PageNum firstFree, lastFree;
 };
 
 
-struct PageHeader {
+struct IX_PageHeader {
     PageNum prevFree, nextFree;
     Bits bitmap, nullmap;
 };
@@ -69,8 +71,8 @@ public:
     bool insertRec(const char *pData, RID &rid);
     bool deleteRec(const RID &rid);
     bool updateRec(const IX_Record &rec);
-    int getFileId() const;
 
+    int getFileId() const;
     RID getRoot() const;
     AttrType getAttrType() const;
     int getAttrLength() const;
@@ -82,6 +84,12 @@ public:
     void searchNext(RID &rid, int &pos, bool direct) const;
     void deleteNode(RID &u, RID & v);
 
+    bool indexEQ(void *data1, RID rid1, void *data2, RID rid2);
+    bool indexGE(void *data1, RID rid1, void *data2, RID rid2);
+    bool indexGT(void *data1, RID rid1, void *data2, RID rid2);
+    bool indexLE(void *data1, RID rid1, void *data2, RID rid2);
+    bool indexLT(void *data1, RID rid1, void *data2, RID rid2);
+
 private:
     PageNum getFreePage();
     char *getPageData(PageNum pageNum, bool write) const;
@@ -89,7 +97,7 @@ private:
     bool removeFreePage(PageNum pageNum) const;
 
     inline int getSlotOffset(SlotNum slotNum) const {
-        return sizeof(PageHeader) + slotNum * recordSize;
+        return sizeof(IX_PageHeader) + slotNum * recordSize;
     }
 
     BufPageManager *bpm;
