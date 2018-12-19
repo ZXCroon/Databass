@@ -318,11 +318,11 @@ bool IX_IndexHandle::insertFreePage(PageNum pageNum, bool isNew) const {
 bool IX_IndexHandle::removeFreePage(PageNum) const {
     IX_FileHeaderPage *header = (IX_FileHeaderPage *)getPageData(0, true);
     IX_PageHeader *ph = (IX_PageHeader *)getPageData(pageNum, true);
-    if (ph->prevFree == NO_PAGE && ph->nextFree == NO_PAGE && header->fistFree != pageNum) {
+    if (ph->prevFree == NO_PAGE && ph->nextFree == NO_PAGE && header->firstFree != pageNum) {
         return false;
     }
     if (ph->prevFree == NO_PAGE) {
-        head->firstFree = ph->nextFree;
+        header->firstFree = ph->nextFree;
     } else {
         IX_PageHeader *pph = (IX_PageHeader *)getPageData(ph->prevFree, true);
         pph->nextFree = ph->nextFree;
