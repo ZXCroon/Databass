@@ -13,6 +13,8 @@ RC IX_IndexScan::openScan(const IX_IndexHandle &indexHandle, CompOp compOp, void
         return IX_INDEXSCAN_INVALIDOP;
     }
     this->indexHandle = &indexHandle;
+    this->compOp = compOp;
+    this->value = value;
     RID none(-1, -1);
     RID inf(100000000, 100000000);
     switch (compOp){
@@ -61,11 +63,21 @@ RC IX_IndexScan::getNextEntry(RID &rid) {
     if (!open) {
         return IX_INDEXSCAN_NOTOPEN;
     }
+
     if (pos == -1) {
         return IX_INDEXSCAN_EOF;
     }
+
+    IX_Record rec;
+    if (!indexHandle->getRec(res, rec)) {
+        return IX_INDEXSCAN_EOF;
+    }
+
+    if (compOp == EQ_OP && !indexHandle->indexEQ(value, RID(-1, -1), rec.getIndexValue(pos), RID(-1, -1))) {
+        return IX_INDEXSCAN_EOF;
+    }
     //todo get the record of res in node
-    rid = node.indexRID[pos];
+    rid = *(rec.getIndexRID(pos));
     indexHandle->searchNext(res, pos, direct);
     return 0;
 }

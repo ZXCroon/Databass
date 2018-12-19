@@ -112,6 +112,8 @@ public:
 
 private:
     const IX_IndexHandle *indexHandle;
+    CompOp compOp;
+    void *value;
     RID res;
     int pos;
     int direct;
