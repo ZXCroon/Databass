@@ -116,6 +116,71 @@ bool IX_IndexHandle::deleteEntry(void *pData, const RID &rid) {
 }
 
 
+bool IX_IndexHandle::getRec(const RID &rid, IX_Record &rec) const {
+    PageNum pageNum = rid.getPageNum();
+    SlotNum slotNum = rid.getSlotNum();
+    char *page = getPageData(pageNum, false);
+    rec = IX_Record(recordSize, rid);
+    if (((IX_PageHeader *)page)->bitmap & (1 << slotNum)) {
+        memcpy(rec.getData(), page + getSlotOffset(slotNum), recordSize);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool IX_IndexHandle::insertRec(const char *pData, RID &rid) {
+    PageNum pageNum = getFreePage();
+    IX_PageHeader *ph = (IX_PageHeader *)getPageData(pageNum, false);
+    SlotNum slotNum = 0;
+    for (Bits x = ph->bitmap; x & 1; (x <<= 1), ++slotNum);
+    ph = (PageHeader *)getPageData(pageNum, true);
+    rid = RID(pageNum, slotNum);
+    memcpy(((char *)ph) + getSlotOffset(slotNum), pData, recordSize);
+    ph->bitmap |= (1 << slotNum);
+    if ((ph->bitmap & ((1 << maxRecordCnt) - 1)) == ((1 << maxRecordCnt) - 1)) {
+        return removeFreePage(pageNum);
+    }
+    return true;
+}
+
+
+bool IX_IndexHandle::deleteRec(const RID &rid) {
+    PageNum pageNum = rid.getPageNum();
+    SlotNum slotNum = rid.getSlotNum();
+    IX_PageHeader *ph = (IX_PageHeader *)getPageData(pageNum, false);
+    bool oriFull = ((ph->bitmap & ((1 << maxRecordCnt) - 1)) == ((1 << maxRecordCnt) - 1));
+    if ((ph->bitmap | ~(1 << slotNum)) == 0) {
+        return false;
+    }
+    ph = (IX_PageHeader *)getPageData(pageNum, true);
+    ph->bitmap &= ~(1 << slotNum);
+    if (oriFull) {
+        return insertFreePage(pageNum, false);
+    }
+    return true;
+}
+
+
+bool IX_IndexHandle::updateRec(const IX_Record &rec) {
+    RID rid = rec.getRid();
+    PageNum pageNum = rid.getPageNum();
+    SlotNum slotNum = rid.getSlotNum();
+    IX_PageHeader *ph = (IX_PageHeader *)getPageData(pageNum, false);
+    if ((ph->bitmap | ~(1 << slotNum)) == 0) {
+        return false;
+    }
+    char *page = getPageData(pageNum, true);
+    if (rec.getData() != NULL) {
+        memcpy(page + getSlotOffset(slotNum), rec.getData(), recordSize);
+    } else {
+        return false;
+    }
+    return true;
+}
+
+
 int IX_IndexHandle::getFileId() const {
     return fileId;
 }
