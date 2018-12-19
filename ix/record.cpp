@@ -1,10 +1,10 @@
 #include "ix.h"
 
 
-IX_Record::IX_Record() : size(0), indexValueSize(0), pData(NULL) {}
+IX_Record::IX_Record() : size(0), attrLength(0), pData(NULL) {}
 
 
-IX_Record::IX_Record(int size, int indexValueSize, const RID &rid) : size(size), indexValueSize(indexValueSize), rid(rid), pData(new char[size]) {}
+IX_Record::IX_Record(int size, int attrLength, const RID &rid) : size(size), attrLength(attrLength), rid(rid), pData(new char[size]) {}
 
 
 IX_Record::~IX_Record() {
@@ -20,37 +20,37 @@ bool *IX_Record::getIsLeaf() const {
 
 
 int *IX_Record::getSize() const {
-    return (int*)(pData + sizeof(bool));
+    return (int*)(pData + sizeof(int));
 }
 
 
 RID *IX_Record::getIndexRID(int i) const {
-    return (RID*)(pData + sizeof(bool) + sizeof(int) + sizeof(RID) * i);
+    return (RID*)(pData + sizeof(int) + sizeof(int) + sizeof(RID) * i);
 }
 
 
 RID *IX_Record::getChild(int i) const {
-    return (RID*)(pData + sizeof(bool) + sizeof(int) + sizeof(RID) * (4 + i));
+    return (RID*)(pData + sizeof(int) + sizeof(int) + sizeof(RID) * (4 + i));
 }
 
 
 RID *IX_Record::getFather() const {
-    return (RID*)(pData + sizeof(bool) + sizeof(int) + sizeof(RID) * (4 + 5));
+    return (RID*)(pData + sizeof(int) + sizeof(int) + sizeof(RID) * (4 + 5));
 }
 
 
 RID *IX_Record::getPrev() const {
-    return (RID*)(pData + sizeof(bool) + sizeof(int) + sizeof(RID) * (4 + 5 + 1));
+    return (RID*)(pData + sizeof(int) + sizeof(int) + sizeof(RID) * (4 + 5 + 1));
 }
 
 
 RID *IX_Record::getNext() const {
-    return (RID*)(pData + sizeof(bool) + sizeof(int) + sizeof(RID) * (4 + 5 + 1 + 1));
+    return (RID*)(pData + sizeof(int) + sizeof(int) + sizeof(RID) * (4 + 5 + 1 + 1));
 }
 
 
 void *IX_Record::getIndexValue(int i) const {
-    return (void*)(pData + sizeof(bool) + sizeof(int) + sizeof(RID) * (4 + 5 + 1 + 1 + 1) + indexValueSize * i);
+    return (void*)(pData + sizeof(int) + sizeof(int) + sizeof(RID) * (4 + 5 + 1 + 1 + 1) + attrLength * i);
 }
 
 

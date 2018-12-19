@@ -25,10 +25,10 @@ class IX_Record {
 
 public:
     IX_Record();
-    IX_Record(int size, int indexValueSize, const RID &rid);
+    IX_Record(int size, int attrLength, const RID &rid);
     ~IX_Record();
 
-    bool *getIsLeaf() const;
+    int *getIsLeaf() const;
     int *getSize() const;
     RID *getIndexRID(int i) const;
     RID *getChild(int i) const;
@@ -42,14 +42,14 @@ public:
     void nullify();
 
 private:
-    int size, indexValueSize;
+    int size, attrLength;
     char *pData;
     RID rid;
 };
 
 // the alignment of pData: bool isLeaf; int size(of indexes); RID indexRID[4], child[5], father, prev, next; AttrType indexValue
 struct IX_Bnode {
-    bool isLeaf;
+    int isLeaf;
     int size;
     RID indexRID[4], child[5], father, prev, next;
     void *indexValue[4];
@@ -125,7 +125,7 @@ public:
     ~IX_Manager();
 
     RC createIndex(const char *filename, int indexNo, AttrType attrType, int attrLength);
-    RC destroyIndex(const char *filename, int indexNo);
+    bool deleteIndex(const char *filename, int indexNo);
     bool openIndex(const char *filename, int indexNo, IX_IndexHandle *&indexHandle);
     bool closeIndex(IX_IndexHandle &indexHandle);
 

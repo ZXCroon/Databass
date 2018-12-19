@@ -20,7 +20,7 @@ RC IX_Manager::createIndex(const char *filename, int indexNo, AttrType attrType,
     }
 
     FileHeaderPage hp;
-    hp.recordSize = sizeof(IX_Bnode);
+    hp.recordSize = sizeof(int) + sizeof(int) + sizeof(RID) * (4 + 5 + 1 + 1 + 1) + attrLength * 4;
     hp.firstFree = hp.lastFree = NO_PAGE;
     hp.availPageCnt = 0;
     hp.root = RID(-1, -1);
@@ -30,6 +30,12 @@ RC IX_Manager::createIndex(const char *filename, int indexNo, AttrType attrType,
     }
 
     return 0;
+}
+
+
+bool IX_Manager::deleteIndex(const char *filename, int indexNo) {
+    const char *indexFilename = getIndexFilename(filename, indexNo);
+    return bpm->fileManager->deleteFile(indexFilename);
 }
 
 
