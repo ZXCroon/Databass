@@ -24,6 +24,7 @@ struct PageHeader {
 class IX_Record {
 
 public:
+    IX_Record();
     IX_Record(int size, int indexValueSize, const RID &rid);
     ~IX_Record();
 
