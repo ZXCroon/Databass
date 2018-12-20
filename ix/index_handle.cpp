@@ -62,56 +62,58 @@ bool IX_IndexHandle::insertEntry(void *pData, const RID &rid) {
 
 bool IX_IndexHandle::deleteEntry(void *pData, const RID &rid) {
     //todo check if not an open index
-    //todo B+ tree delete
     RID res;
     int pos;
     assert(findInsertPos(root, pData, rid, res, pos) == true);
     
-    // todo get record of res in node
-    for (int i = pos; i < node.size - 1; ++i) {
-        node.indexValue[i] = node.indexValue[i + 1];
-        node.indexRID[i] = node.indexRID[i + 1];
+    IX_Record rec;
+    getRec(res, rec);
+    for (int i = pos; i < *(rec.getSize()) - 1; ++i) {
+        memcpy(rec.getIndexValue(i), rec.getIndexValue(i + 1), attrLength);
+        memcpy(rec.getIndexRID(i), rec.getIndexRID(i + 1), sizeof(RID));
     }
-    node.indexValue[node.size] = NULL;
-    node.indexRID[node.size] = RID(-1, -1);
-    --node.size;
-    // todo write node to RID: res
+    memset(rec.getIndexValue(*(rec.getSize()) - 1), 0, attrLength);
+    memset(rec.getIndexRID(*(rec.getSize()) - 1), 0, sizeof(RID));
+    --(*(rec.getSize()));
+    updateRec(rec);
 
     // update indexValue in ancestor node
-    if (pos == 0 && node.size > 0 && res != root) {
-        void *next_value = node.indexValue[0];
-        while (node.father != root) {
-            res = node.father;
-            // todo get record of res in node
-            for (int i = 0; i < node.size; ++i)
-            if (node.indexValue[i] == pData) {
+    if (pos == 0 && *(rec.getSize()) > 0 && res != root) {
+        void *next_value = rec.getIndexValue(0);
+        RID *next_rid = rec.getIndexRID(0);
+        while (*(rec.getFather()) != root) {
+            res = *(rec.getFather());
+            assert(getRec(res, rec) == true)
+            for (int i = 0; i < *(rec.getSize()); ++i)
+            if (indexEQ(pData, rid, rec.getIndexValue(i), *(rec.getIndexRID(i)))) {
+                memcpy(rec.getIndexValue(i), next_value, attrLength);
+                memcpy(rec.getIndexRID(i), next_rid, sizeof(RID));
                 node.indexValue[i] = next_value;
-                // todo write node to RID: res
+                updateRec(rec);
                 return true;
             }
         }
         return true;
     }
 
-    if (node.size == 0) {
-        RID prev = node.prev;
-        RID next = node.next;
+    if (*(rec.getSize()) == 0) {
+        RID prev = *(rec.getPrev());
+        RID next = *(rec.getNext());
         if (prev != RID(-1, -1)) {
-            // todo get record of prev in node
-            node.next = next;
-            // todo write node to RID: prev
+            IX_Record prec;
+            assert(getRec(prev, prec) == true);
+            memcpy(prec.getNext(), &next, sizeof(RID));
+            updateRec(prec);
         }
         if (next != RID(-1, -1)) {
-            // todo get record of next in node
-            node.prev = prev;
-            // todo write node to RID: next
+            IX_Record nrec;
+            assert(getRec(next, nrec) == true);
+            memcpy(nrec.getPrev(), &prev, sizeof(RID));
+            updateRec(nrec);
         }
-
-        // todo delete RID: res
-
-        deleteNode(node.father, res);
+        deleteNode(*(rec.getFather()), res);
+        deleteRec(res);
     }
-
     return true;
 }
 
@@ -355,28 +357,35 @@ void IX_IndexHandle::searchNext(RID &rid, int &pos, bool direct) const {
 }
 
 
+/* v, a child of u is deleted */
 void IX_IndexHandle::deleteNode(RID &u, RID & v) {
-    // todo get Record of RID u in node
-    for (int pos = 0; pos <= node.size; ++pos)
-    if (node.indexRID[pos] == v) {
-        for (int i = pos; i < node.size; ++i) {
-            node.indexRID[i] = node.indexRID[i + 1];
+    IX_Record rec;
+    assert(getRec(u, rec) == true);
+    
+    for (int pos = 0; pos <= *(rec.getSize()); ++pos)
+    if (*(rec.getChild(pos)) == v) {
+        // delete child
+        for (int i = pos; i < *(rec.getSize()); ++i) {
+            memcpy(rec.getChild(i), rec.getChild(i + 1), sizeof(RID));
         }
-        node.indexRID[node.size] = RID(-1, -1);
+        memset(rec.getChild(*(rec.getSize())), 0, sizeof(RID));
 
-        for (int i = max(pos - 1, 0); i < node.size - 1; ++i) {
-            node.indexValue[i] = node.indexValue[i + 1];
+        // delete index
+        for (int i = max(pos - 1, 0); i < *(rec.getSize()) - 1; ++i) {
+            memcpy(rec.getIndexValue(i), rec.getIndexValue(i + 1), attrLength);
+            memcpy(rec.getIndexRID(i), rec.getIndexRID(i + 1), sizeof(RID));
         }
-        node.indexValue[node.size - 1] = NULL;
+        memset(rec.getIndexValue(*(rec.getSize()) - 1), 0, attrLength);
+        memset(rec.getIndexRID(*(rec.getSize()) - 1), 0, sizeof(RID));
 
-        node.size--;
-        // todo write node to RID: u
+        --(*(rec.getSize()));
+        updateRec(rec);
         break;
     }
 
-    if (node.size == 0) {
-        // todo delete record RID: u
-        deleteNode(node.father, u);
+    if (*(rec.getSize()) == 0) {
+        deleteNode(*(rec.getFather()), u);
+        deleteRec(u);
     }
 }
 
