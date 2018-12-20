@@ -202,49 +202,64 @@ int IX_IndexHandle::getAttrLength() const {
 
 
 bool IX_IndexHandle::findInsertPos(RID u, void *pData, const RID &rid, RID &res, int &pos) const {
-    // todo get the Record of RID u in node
-    if (node.isLeaf == true) {
+    IX_Record rec;
+    if (!getRec(u, rec)) {
+        return false;
+    }
+    
+    if (*(rec.getIsLeaf()) == true) {
         res = u;
-        for (int i = 0; i < node.size; ++i) {
-            // todo implement indexEqual
-            if (indexEQ(pData, rid, indexValue[i], indexRID[i])) {
+        for (int i = 0; i < *(rec.getSize()); ++i) {
+            if (indexEQ(pData, rid, rec.getIndexValue(i), *(rec.getIndexRID(i)))) {
                 pos = i;
                 return false;
             }
-            if (indexLT(pData, rid, indexValue[i], indexRID[i])) {
+            if (indexLT(pData, rid, rec.getIndexValue(i), *(rec.getIndexRID(i)))) {
                 pos = i;
                 return true;
             }
         }
-        pos = node.size;
+        pos = *(rec.getSize());
         return true;
     }
-    for (int i = 0; i < node.size; ++i)
-    // implement indexLess
-    if (indexLT(pData, rid, indexValue[i], indexRID[i])) {
-        return findInsertPos(node.indexRID[i], pData, rid, res, pos);
+
+    for (int i = 0; i < *(rec.getSize()); ++i)
+    if (indexLT(pData, rid, rec.getIndexValue(i), *(rec.getIndexRID(i)))) {
+        return findInsertPos(*(rec.getChild(i)), pData, rid, res, pos);
     }
-    return findInsertPos(node.indexRID[node.size], pData, rid, res, pos);
+    return findInsertPos(*(rec.getChild(*(rec.getSize()))), pData, rid, res, pos);
 }
 
 
 void IX_IndexHandle::searchFirst(RID u, RID &res, int &pos) const {
-    // todo get the Record of RID u in node
-    if (node.isLeaf = true) {
+    IX_Record rec;
+    if (!getRec(u, rec)) {
+        res = RID(-1, -1);
+        pos = -1;
+        return;
+    }
+
+    if (*(rec.getIsLeaf()) == true) {
         res = u;
         pos = 0;
         return;
     }
-    searchFirst(node.indexRID[0], res, pos);
+    searchFirst(*(rec.getChild(0)), res, pos);
 }
 
 
 void IX_IndexHandle::searchGE(RID u, void *pData, const RID &rid, RID &res, int &pos) const {
-    // todo get the Record of RID u in node
-    if (node.isLeaf == true) {
+    IX_Record rec;
+    if (!getRec(u, rec)) {
+        res = RID(-1, -1);
+        pos = -1;
+        return;
+    }
+
+    if (*(rec.getIsLeaf()) == true) {
         res = u;
-        for (int i = 0; i < node.size; ++i)
-        if (indexGE(indexValue[i], indexRID[i], pData, rid)) {
+        for (int i = 0; i < *(rec.getSize()); ++i)
+        if (indexGE(rec.getIndexValue(i), *(rec.getIndexRID(i)), pData, rid)) {
             pos = i;
             return;
         }
@@ -252,20 +267,30 @@ void IX_IndexHandle::searchGE(RID u, void *pData, const RID &rid, RID &res, int 
         pos = -1;
         return;
     }
-    for (int i = 0; i < node.size; ++i)
-    if (indexGT(indexValue[i], indexRID[i], pData, rid)) {
-        searchGE(node.indexRID[i], pData, rid, res, pos);
-        return;
+
+    for (int i = 0; i < *(rec.getSize()); ++i)
+    if (indexGT(rec.getIndexValue(i), *(rec.getIndexRID(i)), pData, rid)) {
+        searchGE(*(rec.getChild(i)), pData, rid, res, pos);
+        if (pos != -1) {
+            return;
+        }
     }
-    searchGE(node.indexRID[node.size], pData, rid, res, pos);
+    searchGE(*(rec.getChild(*(rec.getChild(i)))), pData, rid, res, pos);
 }
 
+
 void IX_IndexHandle::searchLT(RID u, void *pData, const RID &rid, RID &res, int &pos) const {
-    // todo get Record of RID u in node
-    if (node.isLeaf == true) {
+    IX_Record rec;
+    if (!getRec(u, rec)) {
+        res = RID(-1, -1);
+        pos = -1;
+        return;
+    }
+    
+    if (*(rec.getIsLeaf()) == true) {
         res = u;
-        for (int i = node.size - 1; i >= 0; --i)
-        if (indexLT(indexValue[i], indexRID[i], pData, rid)) {
+        for (int i = *(rec.getSize()) - 1; i >= 0; --i)
+        if (indexLT(rec.getIndexValue(i), *(rec.getIndexRID(i)), pData, rid)) {
             pos = i;
             return;
         }
@@ -273,12 +298,15 @@ void IX_IndexHandle::searchLT(RID u, void *pData, const RID &rid, RID &res, int 
         pos = -1;
         return;
     }
-    for (int i = node.size - 1; i >= 0; --i)
-    if (indexLT(indexValue[i], indexRID[i], pData, rid)) {
-        searchLT(node.indexRID[i + 1], pData, rid, res, pos);
-        return;
+
+    for (int i = *(rec.getSize()) - 1; i >= 0; --i)
+    if (indexLT(rec.getIndexValue(i), *(rec.getIndexRID(i)), pData, rid)) {
+        searchLT(*(rec.getChild(i + 1)), pData, rid, res, pos);
+        if (pos != -1) {
+            return;
+        }
     }
-    searchLT(node.indexRID[0], pData, rid, res, pos);
+    searchLT(*(rec.getChild(0)), pData, rid, res, pos);
 }
 
 
@@ -286,20 +314,38 @@ void IX_IndexHandle::searchNext(RID &rid, int &pos, bool direct) const {
     if (pos == -1) {
         return;
     }
+
     if (direct == 0) {
         if (pos == 0) {
-            rid = node.prev;
-            // todo get the Record of rid in node
-            pos = node.size;
+            IX_Record rec;
+            if (!getRec(rid, rec)) {
+                rid = RID(-1, -1);
+                pos = -1;
+                return;
+            }
+            rid = *(rec.getPrev());
+            
+            if (!getRec(rid, rec)) {
+                rid = RID(-1, -1);
+                pos = -1;
+                return;
+            }
+            pos = *(rec.getSize()) - 1;
         }
         else {
             --pos;
         }
     }
     else {
-        // todo get the Record of rid in node
-        if (pos == node.size) {
-            rid = node.next;
+        IX_Record rec;
+        if (!getRec(rid, rec)) {
+            rid = RID(-1, -1);
+            pos = -1;
+            return;
+        }
+        
+        if (pos == *(rec.getSize()) - 1) {
+            rid = *(rec.getNext());
             pos = 0;
         }
         else {
@@ -335,7 +381,7 @@ void IX_IndexHandle::deleteNode(RID &u, RID & v) {
 }
 
 
-bool IX_IndexHandle::indexEQ(void *data1, RID rid1, void *data2, RID rid2) {
+bool IX_IndexHandle::indexEQ(void *data1, RID rid1, void *data2, RID rid2) const {
     switch (attrType) {
         
     case INT: {
@@ -358,12 +404,12 @@ bool IX_IndexHandle::indexEQ(void *data1, RID rid1, void *data2, RID rid2) {
 }
 
 
-bool IX_IndexHandle::indexGE(void *data1, RID rid1, void *data2, RID rid2) {
+bool IX_IndexHandle::indexGE(void *data1, RID rid1, void *data2, RID rid2) const {
     return indexEQ(data1, rid1, data2, rid2) || indexGT(data1, rid1, data2, rid2);
 }
 
 
-bool IX_IndexHandle::indexGT(void *data1, RID rid1, void *data2, RID rid2) {
+bool IX_IndexHandle::indexGT(void *data1, RID rid1, void *data2, RID rid2) const {
     switch (attrType) {
 
     case INT: {
@@ -386,12 +432,12 @@ bool IX_IndexHandle::indexGT(void *data1, RID rid1, void *data2, RID rid2) {
 }
 
 
-bool IX_IndexHandle::indexLE(void *data1, RID rid1, void *data2, RID rid2) {
+bool IX_IndexHandle::indexLE(void *data1, RID rid1, void *data2, RID rid2) const {
     return indexEQ(data1, rid1, data2, rid2) || indexLT(data1, rid1, data2, rid2);
 }
 
 
-bool IX_IndexHandle::indexLT(void *data1, RID rid1, void *data2, RID rid2) {
+bool IX_IndexHandle::indexLT(void *data1, RID rid1, void *data2, RID rid2) const {
     switch (attrType) {
 
     case INT: {

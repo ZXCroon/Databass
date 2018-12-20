@@ -84,11 +84,11 @@ public:
     void searchNext(RID &rid, int &pos, bool direct) const;
     void deleteNode(RID &u, RID & v);
 
-    bool indexEQ(void *data1, RID rid1, void *data2, RID rid2);
-    bool indexGE(void *data1, RID rid1, void *data2, RID rid2);
-    bool indexGT(void *data1, RID rid1, void *data2, RID rid2);
-    bool indexLE(void *data1, RID rid1, void *data2, RID rid2);
-    bool indexLT(void *data1, RID rid1, void *data2, RID rid2);
+    bool indexEQ(void *data1, RID rid1, void *data2, RID rid2) const;
+    bool indexGE(void *data1, RID rid1, void *data2, RID rid2) const;
+    bool indexGT(void *data1, RID rid1, void *data2, RID rid2) const;
+    bool indexLE(void *data1, RID rid1, void *data2, RID rid2) const;
+    bool indexLT(void *data1, RID rid1, void *data2, RID rid2) const;
 
 private:
     PageNum getFreePage();
