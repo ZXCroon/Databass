@@ -335,6 +335,84 @@ void IX_IndexHandle::deleteNode(RID &u, RID & v) {
 }
 
 
+bool IX_IndexHandle::indexEQ(void *data1, RID rid1, void *data2, RID rid2) {
+    switch (attrType) {
+        
+    case INT: {
+        int u = *(int *)data1, v = *(int *)data2;
+        return u == v && rid1 == rid2;
+    }
+
+    case FLOAT: {
+        float u = *(float *)data1, v = *(float *)data2;
+        return u == v && rid1 == rid2;
+    }
+
+    case STRING: {
+        char *u = (char *)data1, *v = (char *)data2;
+        int cmp = strncmp(u, v, attrLength);
+        return cmp == 0 && rid1 == rid2;
+    }
+
+    }
+}
+
+
+bool IX_IndexHandle::indexGE(void *data1, RID rid1, void *data2, RID rid2) {
+    return indexEQ(data1, rid1, data2, rid2) || indexGT(data1, rid1, data2, rid2);
+}
+
+
+bool IX_IndexHandle::indexGT(void *data1, RID rid1, void *data2, RID rid2) {
+    switch (attrType) {
+
+    case INT: {
+        int u = *(int *)data1, v = *(int *)data2;
+        return u > v || (u == v && rid1 > rid2);
+    }
+
+    case FLOAT: {
+        float u = *(float *)data1, v = *(float *)data2;
+        return u > v || (u == v && rid1 > rid2);
+    }
+
+    case STRING: {
+        char *u = (char *)data1, *v = (char *)data2;
+        int cmp = strcmp(u, v, attrLength);
+        return cmp > 0 || (cmp == 0 && rid1 > ri2);
+    }
+    
+    }
+}
+
+
+bool IX_IndexHandle::indexLE(void *data1, RID rid1, void *data2, RID rid2) {
+    return indexEQ(data1, rid1, data2, rid2) || indexLT(data1, rid1, data2, rid2);
+}
+
+
+bool IX_IndexHandle::indexLT(void *data1, RID rid1, void *data2, RID rid2) {
+    switch (attrType) {
+
+    case INT: {
+        int u = *(int *)data1, v = *(int *)data2;
+        return u < v || (u == v && rid1 < rid2);
+    }
+
+    case FLOAT: {
+        float u = *(float *)data1, v = *(float *)data2;
+        return u < v || (u == v && rid1 < rid2);
+    }
+
+    case STRING: {
+        char *u = (char *)data1, *v = (char *)data2;
+        int cmp = strcmp(u, v, attrLength);
+        return cmp < 0 || (cmp == 0 && rid1 < ri2);
+    }
+    }
+}
+
+
 PageNum IX_IndexHandle::getFreePage() {
     IX_FileHeaderPage *header = (IX_FileHeaderPage *)getPageData(0, false);
     if (header->firstFree == NO_PAGE) {
