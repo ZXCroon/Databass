@@ -83,6 +83,7 @@ public:
     void searchLT(RID u, void *pData, const RID &rid, RID &res, int &pos) const;
     void searchNext(RID &rid, int &pos, bool direct) const;
     void deleteNode(RID &u, RID & v);
+    void combinePair(RID &u, RID &v, void *pData, const RID &rid);
 
     bool indexEQ(void *data1, RID rid1, void *data2, RID rid2) const;
     bool indexGE(void *data1, RID rid1, void *data2, RID rid2) const;
