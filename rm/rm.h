@@ -14,19 +14,19 @@ struct FileHeaderPage {
 
 struct PageHeader {
     PageNum prevFree, nextFree;
-    Bits bitmap, nullmap;
+    Bits bitmap;
 };
 
 
 class RM_Record {
 
 public:
+    RM_Record();
     RM_Record(int size, const RID &rid);
     ~RM_Record();
 
     char *getData() const;
     RID getRid() const;
-    void nullify();
 
 private:
     int size;
@@ -70,10 +70,13 @@ private:
 class RM_Manager {
 
 public:
-    RM_Manager(BufPageManager &bpm);
+    RM_Manager(BufPageManager *&bpm);
     ~RM_Manager();
 
     RC createFile(const char *fileName, int recordSize);
+    bool createDir(const char *dirName);
+    bool deleteFile(const char *fileName);
+    bool deleteDir(const char *dirName);
     bool openFile(const char *fileName, RM_FileHandle *&fileHandle);
     bool closeFile(RM_FileHandle &fileHandle);
 

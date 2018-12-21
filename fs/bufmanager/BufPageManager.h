@@ -172,5 +172,10 @@ public:
 			addr[i] = NULL;
 		}
 	}
+    ~BufPageManager() {
+        delete[] dirty;
+        delete[] addr;
+        delete replace;
+    }
 };
 #endif

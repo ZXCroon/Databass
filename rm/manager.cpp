@@ -1,7 +1,7 @@
 #include "rm.h"
 
 
-RM_Manager::RM_Manager(BufPageManager &bpm) : bpm(&bpm) {}
+RM_Manager::RM_Manager(BufPageManager *&bpm) : bpm(bpm) {}
 
 
 RM_Manager::~RM_Manager() {}
@@ -29,6 +29,21 @@ RC RM_Manager::createFile(const char *fileName, int recordSize) {
     }
 
     return 0;
+}
+
+
+bool RM_Manager::createDir(const char *dirName) {
+    return bpm->fileManager->createDir(dirName);
+}
+
+
+bool RM_Manager::deleteFile(const char *fileName) {
+    return bpm->fileManager->deleteFile(fileName);
+}
+
+
+bool RM_Manager::deleteDir(const char *dirName) {
+    return deleteFile(dirName);
 }
 
 
