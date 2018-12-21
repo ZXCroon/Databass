@@ -1,6 +1,6 @@
+#include <string>
+#include <sstream>
 #include "ix.h"
-
-#include <string.h>
 
 
 IX_Manager::IX_Manager(BufPageManager &bpm) : bpm(&bpm) {}
@@ -60,6 +60,8 @@ bool IX_Manager::closeIndex(IX_IndexHandle &indexHandle) {
 
 const char* IX_Manager::getIndexFilename(const char* filename, int indexNo) {
     string temp(filename);
-    temp += '.' + to_string(indexNo);
+    std::stringstream ss;
+    ss << indexNo;
+    temp += '.' + ss.str();
     return temp.c_str();
 }

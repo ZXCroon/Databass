@@ -2,7 +2,6 @@
 #define IX_H
 
 #include <assert.h>
-
 #include "../utils/defs.h"
 #include "../rm/rm_rid.h"
 #include "../fs/bufmanager/BufPageManager.h"
@@ -61,7 +60,7 @@ struct IX_Bnode {
 class IX_IndexHandle {
 
 public:
-    IX_IndexHandle(BufPageManager *bpm, int fileId);
+    IX_IndexHandle(BufPageManager *&bpm, int fileId);
     ~IX_IndexHandle();
 
     bool insertEntry(void *pData, const RID &rid);
@@ -106,7 +105,7 @@ private:
     int recordSize, maxRecordCnt, availPageCnt;
     AttrType attrType;
     int attrLength;
-    RID root;
+    RID root, nullRID;
 };
 
 class IX_IndexScan {

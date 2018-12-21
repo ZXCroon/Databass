@@ -14,8 +14,8 @@ IX_Record::~IX_Record() {
 }
 
 
-bool *IX_Record::getIsLeaf() const {
-    return (bool*)pData;
+int *IX_Record::getIsLeaf() const {
+    return (int*)pData;
 }
 
 
