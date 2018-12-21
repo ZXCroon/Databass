@@ -53,8 +53,10 @@ public:
     // bool dropDb(const char *dbName);
     bool openDb(const char *dbName);
     bool closeDb();
+    bool showDb(const char *dbName);
     bool createTable(const char *relName, int attrCount, AttrInfo *attributes);
     bool dropTable(const char *relName);
+    bool showTable(const char *relName);
     bool createIndex(const char *relName, const char *attrName);
     bool dropIndex(const char *relName, const char *attrName);
 

@@ -39,6 +39,7 @@ bool RM_FileHandle::insertRec(const char *pData, RID &rid) {
     if ((ph->bitmap & ((1 << maxRecordCnt) - 1)) == ((1 << maxRecordCnt) - 1)) {
         return removeFreePage(pageNum);
     }
+    return true;
 }
 
 
@@ -55,6 +56,7 @@ bool RM_FileHandle::deleteRec(const RID &rid) {
     if (oriFull) {
         return insertFreePage(pageNum, false);
     }
+    return true;
 }
 
 

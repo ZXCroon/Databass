@@ -30,6 +30,8 @@ typedef int AttrType;
 const int INT = 0;
 const int FLOAT = 1;
 const int STRING = 2;
+const int VARSTRING = 3;
+const int DATE = 4;
 
 
 //
