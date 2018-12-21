@@ -15,3 +15,33 @@ PageNum RID::getPageNum() const {
 SlotNum RID::getSlotNum() const {
     return slotNum;
 }
+
+
+bool RID::operator < (const RID &r) {
+    return pageNum < r.pageNum || (pageNum == r.pageNum && slotNum < r.slotNum);
+}
+
+
+bool RID::operator > (const RID &r) {
+    return pageNum > r.pageNum || (pageNum == r.pageNum && slotNum > r.slotNum);
+}
+
+
+bool RID::operator == (const RID &r) {
+    return pageNum == r.pageNum && slotNum == r.slotNum;
+}
+
+
+bool RID::operator <= (const RID &r) {
+    return !(*this > r);
+}
+
+
+bool RID::operator >= (const RID &r) {
+    return !(*this < r);
+}
+
+
+bool RID::operator != (const RID &r) {
+    return !(*this == r);
+}

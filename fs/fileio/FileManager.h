@@ -118,6 +118,18 @@ public:
 		_openFile(name, fileID);
 		return true;
 	}
+    bool deleteFile(const char*name) {
+        return remove(name) == 0;
+    }
+    bool createDir(const char* name) {
+        struct stat st = {0};
+        if (stat(name, &st) == -1) {
+            mkdir(name, 0755);
+            return true;
+        } else {
+            return false;
+        }
+    }
 	int newType() {
 		int t = tm->findLeftOne();
 		tm->setBit(t, 0);

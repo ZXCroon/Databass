@@ -92,6 +92,8 @@ public:
 	}
 	~FileTable() {
 		save();
+        delete ft;
+        delete ff;
 	}
 };
 #endif
