@@ -155,6 +155,24 @@ bool SM_Manager::createIndex(const char *relName, const char *attrName) {
     attrcatHandle->updateRec(attrRec);
 
     ixm->createIndex(getPath(dbName, relName), attrcat.indexNo, attrcat.attrType, attrcat.attrLength);
+    IX_IndexHandle *ixHandle;
+    ixm->openIndex(getPath(dbName, relName), attrcat.indexNo, ixHandle);
+    RM_FileHandle *handle;
+    rmm->openFile(getPath(dbName, relName), handle);
+    RM_FileScan scan;
+    scan.openScan(*handle, 0, 0, 0, NO_OP, NULL);
+    RM_Record rec;
+    RC rc;
+    while (true) {
+        rc = scan.getNextRec(rec);
+        if (rc == RM_FILESCAN_NONEXT) {
+            break;
+        }
+        RID rid;
+        ixHandle->insertEntry(rec.getData() + attrcat.offset, rid);
+    }
+    ixm->closeIndex(*ixHandle);
+    rmm->closeFile(*handle);
     return true;
 }
 
