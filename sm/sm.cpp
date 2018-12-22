@@ -2,7 +2,7 @@
 #include "sm.h"
 
 
-SM_Manager::SM_Manager(const IX_Manager *&ixm, const RM_Manager *&rmm) : ixm(ixm), rmm(rmm), relcatHandle(NULL), attrcatHandle(NULL) {}
+SM_Manager::SM_Manager(IX_Manager *ixm, RM_Manager *rmm) : ixm(ixm), rmm(rmm), relcatHandle(NULL), attrcatHandle(NULL) {}
 
 
 SM_Manager::~SM_Manager() {
@@ -27,7 +27,7 @@ bool SM_Manager::createDb(const char *dbName) {
 }
 
 
-bool SM_Manager::destroyDb(const char *dbName) {
+bool SM_Manager::dropDb(const char *dbName) {
     return rmm->deleteDir(dbName);
 }
 
@@ -38,7 +38,13 @@ bool SM_Manager::openDb(const char *dbName) {
             return false;
         }
     }
+    strcpy(this->dbName, dbName);
     return rmm->openFile(getPath(dbName, "relcat"), relcatHandle) && rmm->openFile(getPath(dbName, "attrcat"), attrcatHandle);
+}
+
+
+bool SM_Manager::showDb(const char *dbName) {
+    // TODO
 }
 
 
@@ -50,6 +56,7 @@ bool SM_Manager::closeDb() {
         return false;
     }
     relcatHandle = attrcatHandle = NULL;
+    return true;
 }
 
 
@@ -64,7 +71,7 @@ bool SM_Manager::createTable(const char *relName, int attrCount, AttrInfo *attri
     padName(relcat.relName);
     relcat.tupleLength = 0;
     relcat.attrCount = attrCount;
-    relcat.indexCount = 0;
+    relcat.nextIndex = 0;
     AttrInfo *attr = attributes;
     for (int i = 0; i < attrCount; ++i, ++attr) {
         AttrcatLayout attrcat;
@@ -83,12 +90,16 @@ bool SM_Manager::createTable(const char *relName, int attrCount, AttrInfo *attri
         relcat.tupleLength += attr->attrLength;
     }
 
-    RID rid;
     relcatHandle->insertRec((char *)(&relcat), rid);
 
     rmm->createFile(getPath(dbName, relName), relcat.tupleLength);
 
     return true;
+}
+
+
+bool SM_Manager::showTable(const char *relName) {
+    // TODO
 }
 
 
@@ -137,13 +148,13 @@ bool SM_Manager::createIndex(const char *relName, const char *attrName) {
     attrcat.indexNo = relcat.nextIndex;
     ++relcat.nextIndex;
 
-    memcpy(relRec.getData(), (char *)relcat, sizeof(RelcatLayout));
-    memcpy(attrRec.getData(), (char *)attrcat, sizeof(AttrcatLayout));
+    memcpy(relRec.getData(), (char *)&relcat, sizeof(RelcatLayout));
+    memcpy(attrRec.getData(), (char *)&attrcat, sizeof(AttrcatLayout));
 
     relcatHandle->updateRec(relRec);
     attrcatHandle->updateRec(attrRec);
 
-    createIndex(getPath(dbName, relName), attrcat.indexNo, attrcat.attrType, attrcat.attrLength);
+    ixm->createIndex(getPath(dbName, relName), attrcat.indexNo, attrcat.attrType, attrcat.attrLength);
     return true;
 }
 
@@ -163,10 +174,10 @@ bool SM_Manager::dropIndex(const char *relName, const char *attrName) {
     }
 
     attrcat.indexNo = -1;
-    memcpy(attrRec.getData(), (char *)attrcat, sizeof(AttrcatLayout));
+    memcpy(attrRec.getData(), (char *)&attrcat, sizeof(AttrcatLayout));
     attrcatHandle->updateRec(attrRec);
 
-    deleteIndex(getPath(dbName, relName), attrcat.indexNo);
+    ixm->deleteIndex(getPath(dbName, relName), attrcat.indexNo);
     return true;
 }
 
@@ -191,7 +202,7 @@ bool SM_Manager::getRelcatRid(const char *relName, RID &rid) {
     strcpy(relNamePad, relName);
     padName(relNamePad);
     RM_FileScan scan;
-    scan.openScan(&(*relcatHandle), STRING, MAXNAME + 1, 0, EQ_OP, relNamePad);
+    scan.openScan(*relcatHandle, STRING, MAXNAME + 1, 0, EQ_OP, relNamePad);
     RM_Record rec;
     if (scan.getNextRec(rec) == RM_FILESCAN_NONEXT) {
         return false;
@@ -213,10 +224,14 @@ bool SM_Manager::getAttrcatRids(const char *relName, const char *attrName, RID *
 
     ridCount = 0;
     RM_FileScan scan;
-    scan.openScan(&(*attrcatHandle), STRING, MAXNAME + 1, 0, EQ_OP, relNamePad);
+    RM_Record rec;
+    RID rid;
+    scan.openScan(*attrcatHandle, STRING, MAXNAME + 1, 0, EQ_OP, relNamePad);
     while (scan.getNextRec(rec) == 0) {
         rid = rec.getRid();
-        if (!attrName || strcmp(getAttrcatRids(rid).attrName, attrNamePad) == 0) {
+        AttrcatLayout attrcat;
+        getAttrcatFromRid(rid, attrcat);
+        if (!attrName || strcmp(attrcat.attrName, attrNamePad) == 0) {
             rids[ridCount] = rid;
             ++ridCount;
         }
@@ -229,12 +244,12 @@ bool SM_Manager::getAttrcatRids(const char *relName, const char *attrName, RID *
 void SM_Manager::getRelcatFromRid(const RID &rid, RelcatLayout &relcat) {
     RM_Record rec;
     relcatHandle->getRec(rid, rec);
-    memcpy(&relcat, rec.getData, sizeof(RelcatLayout))
+    memcpy(&relcat, rec.getData(), sizeof(RelcatLayout));
 }
 
 
 void SM_Manager::getAttrcatFromRid(const RID &rid, AttrcatLayout &attrcat) {
     RM_Record rec;
     attrcatHandle->getRec(rid, rec);
-    memcpy(&attrcat, rec.getData(), sizeof(AttrcatLayout))
+    memcpy(&attrcat, rec.getData(), sizeof(AttrcatLayout));
 }

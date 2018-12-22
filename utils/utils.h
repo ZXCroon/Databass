@@ -111,6 +111,8 @@ bool validate(char *pData, AttrType attrType, int attrLength,
     }
 
     }
+
+    throw;
 }
 
 

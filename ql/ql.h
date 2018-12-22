@@ -8,8 +8,8 @@
 
 
 struct RelAttr {
-    char *relName;
-    char *attrName;
+    const char *relName;
+    const char *attrName;
 };
 
 
@@ -36,10 +36,10 @@ struct Catalog {
 
 
 struct SearchStrategy {
-    Attrcat *attrcat;  // NULL means no fast-searching strategy
+    const AttrcatLayout *attrcat;  // NULL means no fast-searching strategy
     CompOp compOp;
     Value value;  // NULL means not decided until value of the other relation's "auxAttrName" is decided (cross-relation attribute)
-    Attrcat *auxAttrcat;
+    const AttrcatLayout *auxAttrcat;
 };
 
 
@@ -56,10 +56,10 @@ public:
     ~QL_Manager();
 
     RC select(int nSelAttrs, const RelAttr selAttrs[],
-                const char* relation1, const char *relation2, const JoinType joinType,
-                int nRelations, const char * const relations[],
-                int nConditions,
-                const Condition conditions[]);
+              const char* relation1, const char *relation2, const JoinType &joinType,
+              int nRelations, const char * const relations[],
+              int nConditions,
+              const Condition conditions[]);
     void insert(const char *relName, int nValues, const Value values[]);
     void del(const char *relName, int nConditions, const Condition conditions[]);
     void update(const char *relName, const RelAttr &updAttr, const int bIsValue,
@@ -67,8 +67,18 @@ public:
                 int nConditions, const Condition conditions[]);
 
 private:
+    bool getCatalog(const char *relName, Catalog &cat);
+    const AttrcatLayout *locateAttrcat(const char *relName, const Catalog &cat, const RelAttr &ra);
     char *getPath(const char *dbName, const char *relName);
-    void *padValue(const void *value, AttrType attrType, int attrLength);
+    void *padValue(void *value, AttrType attrType, int attrLength);
+    bool decideStrategy(const char *relation1, const char *relation2,
+                        const Catalog &cat1, const Catalog &cat2, const JoinType &joinType,
+                        int nConditions, const Condition conditions[], SelectStrategy &strat);
+    bool singleValidate(const char *relation, const Catalog &cat, int nConditions, const Condition *conditions, const RM_Record &rec);
+    bool pairValidate(const char *relation1, const char *relation2,
+                      const Catalog &cat1, const Catalog &cat2,
+                      int nConditions, const Condition *conditions,
+                      const RM_Record &rec1, const RM_Record &rec2);
 
     SM_Manager *smm;
     IX_Manager *ixm;

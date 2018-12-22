@@ -46,11 +46,11 @@ class QL_Manager;
 class SM_Manager {
 
 public:
-    SM_Manager(const IX_Manager *&ixm, const RM_Manager *&rmm);
+    SM_Manager(IX_Manager *ixm, RM_Manager *rmm);
     ~SM_Manager();
 
     bool createDb(const char *dbName);
-    // bool dropDb(const char *dbName);
+    bool dropDb(const char *dbName);
     bool openDb(const char *dbName);
     bool closeDb();
     bool showDb(const char *dbName);
@@ -65,11 +65,15 @@ public:
 private:
     char *getPath(const char *dbName, const char *relName);
     void padName(char name[MAXNAME + 1], char padding = ' ');
+    bool getRelcatRid(const char *relName, RID &rid);
+    bool getAttrcatRids(const char *relName, const char *attrName, RID *rids, int &ridCount);
+    void getRelcatFromRid(const RID &rid, RelcatLayout &relcat);
+    void getAttrcatFromRid(const RID &rid, AttrcatLayout &attrcat);
 
     IX_Manager *ixm;
     RM_Manager *rmm;
     RM_FileHandle *relcatHandle, *attrcatHandle;
-    char pathBuf[MAXNAME * 2 + 10];
+    char dbName[MAXNAME + 1], pathBuf[MAXNAME * 2 + 10];
 };
 
 

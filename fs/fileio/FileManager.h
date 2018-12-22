@@ -13,10 +13,17 @@ class FileManager {
 private:
 	//FileTable* ftable;
 	int fd[MAX_FILE_NUM];
+    char baseDir[500];
+    char pathBuf[500];
 	MyBitMap* fm;
 	MyBitMap* tm;
+    char *fullName(const char *name) {
+        strcpy(pathBuf, baseDir);
+        strcat(pathBuf, name);
+        return pathBuf;
+    }
 	int _createFile(const char* name) {
-		FILE* f = fopen(name, "a+");
+		FILE* f = fopen(fullName(name), "a+");
 		if (f == NULL) {
 			cout << "fail" << endl;
 			return -1;
@@ -25,7 +32,7 @@ private:
 		return 0;
 	}
 	int _openFile(const char* name, int fileID) {
-		int f = open(name, O_RDWR);
+		int f = open(fullName(name), O_RDWR);
 		if (f == -1) {
 			return -1;
 		}
@@ -36,9 +43,15 @@ public:
 	/*
 	 * FilManager构造函数
 	 */
-	FileManager() {
+	FileManager(const char* baseDir) {
 		fm = new MyBitMap(MAX_FILE_NUM, 1);
 		tm = new MyBitMap(MAX_TYPE_NUM, 1);
+        strcpy(this->baseDir, baseDir);
+        int len = strlen(baseDir);
+        if (baseDir[len - 1] != '/') {
+            this->baseDir[len] = '/';
+            this->baseDir[len + 1] = '\0';
+        }
 	}
 	/*
 	 * @函数名writePage
@@ -119,12 +132,12 @@ public:
 		return true;
 	}
     bool deleteFile(const char*name) {
-        return remove(name) == 0;
+        return remove(fullName(name)) == 0;
     }
     bool createDir(const char* name) {
         struct stat st = {0};
-        if (stat(name, &st) == -1) {
-            mkdir(name, 0755);
+        if (stat(fullName(name), &st) == -1) {
+            mkdir(fullName(name), 0755);
             return true;
         } else {
             return false;
