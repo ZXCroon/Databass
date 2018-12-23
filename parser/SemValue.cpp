@@ -28,8 +28,5 @@ CompOp SemValue::opt(char *code) {
     if (strcmp(code, "<>") == 0) {
         return NE_OP;
     }
-    if (strcmp(code, "is") == 0 || strcmp(code, "IS") == 0) {
-        return IS_OP;
-    }
     return NO_OP;
 }

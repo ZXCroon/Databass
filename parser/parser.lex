@@ -13,7 +13,7 @@ VALUE_STRING ('[^']*')
 
 IDENTIFIER ([A-Za-z][_0-9A-Za-z]*)
 EXIT ("EXIT"|"exit")
-OPERATOR ("<="|">="|"<>"|"<"|">"|"="|"is"|"IS"|","|"."|";"|"*"|"("|")")
+OPERATOR ("<="|">="|"<>"|"<"|">"|"="|","|"."|";"|"*"|"("|")")
 
 DATABASE ("database"|"DATABASE")
 DATABASES ("databases"|"DATABASES")
@@ -46,6 +46,8 @@ AND ("and"|"AND")
 DATE ("date"|"DATE")
 FLOAT ("float"|"FLOAT")
 FOREIGN ("foreign"|"FOREIGN")
+
+IS ("is"|"IS")
 
 INT ("INT"|"int")
 CHAR ("CHAR"|"char")
@@ -95,6 +97,8 @@ NEWLINE (\r|\n|\r\n)
 {DATE}                                  { return SemValue::keyword(DATE); }
 {FLOAT}                                 { return SemValue::keyword(FLOAT); }
 {FOREIGN}                               { return SemValue::keyword(FOREIGN); }
+
+{IS}                                    { return SemValue::keyword(IS); }
 
 {INT}                                   { return SemValue::keyword(INT); }
 {CHAR}                                  { return SemValue::keyword(CHAR); }
