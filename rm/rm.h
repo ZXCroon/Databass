@@ -70,7 +70,7 @@ private:
 class RM_Manager {
 
 public:
-    RM_Manager(BufPageManager *&bpm);
+    RM_Manager(BufPageManager *bpm);
     ~RM_Manager();
 
     RC createFile(const char *fileName, int recordSize);
@@ -98,8 +98,6 @@ public:
     RC closeScan();
 
 private:
-    bool validate(char *pData, AttrType attrType, int attrLength,
-                  CompOp compOp, void *value);
     const RM_FileHandle *fileHandle;
     AttrType attrType;
     int attrLength, attrOffset;

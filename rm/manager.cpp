@@ -1,7 +1,7 @@
 #include "rm.h"
 
 
-RM_Manager::RM_Manager(BufPageManager *&bpm) : bpm(bpm) {}
+RM_Manager::RM_Manager(BufPageManager *bpm) : bpm(bpm) {}
 
 
 RM_Manager::~RM_Manager() {}

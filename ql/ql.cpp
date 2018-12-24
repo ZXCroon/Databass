@@ -3,7 +3,7 @@
 #include "ql.h"
 
 
-QL_Manager::QL_Manager(SM_Manager *&smm, IX_Manager *&ixm, RM_Manager *&rmm) :
+QL_Manager::QL_Manager(SM_Manager *smm, IX_Manager *ixm, RM_Manager *rmm) :
         smm(smm), ixm(ixm), rmm(rmm) {}
 
 

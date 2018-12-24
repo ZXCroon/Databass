@@ -1,13 +1,15 @@
 #ifndef FILE_MANAGER
 #define FILE_MANAGER
-#include <string>
+#include <cstring>
 #include <stdio.h>
 #include <iostream>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
-//#include "../MyLinkList.h"
+#include "../utils/MyLinkList.h"
+#include "../utils/MyBitMap.h"
+#include "../utils/pagedef.h"
 using namespace std;
 class FileManager {
 private:
