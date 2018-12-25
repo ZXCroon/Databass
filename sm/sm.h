@@ -7,9 +7,12 @@
 
 
 struct AttrInfo {
-    char attrName[MAXNAME + 1];
+    char attrName[MAXNAME + 1], refTbname[MAXNAME + 1], refColname[MAXNAME + 1];
     AttrType attrType;
     int attrLength;
+    NotNull notNull;
+    IsPrimary isPrimary;
+    IsForeign isForeign;
 };
 
 

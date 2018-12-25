@@ -26,7 +26,7 @@ USE ("use"|"USE")
 PRIMARY ("primary"|"PRIMARY")
 KEY ("key"|"KEY")
 NOT ("not"|"NOT")
-NULL ("null"|"NULL")
+NUL ("null"|"NULL")
 INSERT ("insert"|"INSERT")
 INTO ("into"|"INTO")
 VALUES ("values"|"VALUES")
@@ -77,7 +77,7 @@ NEWLINE (\r|\n|\r\n)
 {PRIMARY}                               { return SemValue::keyword(PRIMARY); }
 {KEY}                                   { return SemValue::keyword(KEY); }
 {NOT}                                   { return SemValue::keyword(NOT); }
-{NULL}                                  { return SemValue::keyword(NULL); }
+{NUL}                                   { return SemValue::keyword(NUL); }
 {INSERT}                                { return SemValue::keyword(INSERT); }
 {INTO}                                  { return SemValue::keyword(INTO); }
 {VALUES}                                { return SemValue::keyword(VALUES); }
@@ -104,12 +104,7 @@ NEWLINE (\r|\n|\r\n)
 {CHAR}                                  { return SemValue::keyword(CHAR); }
 {VARCHAR}                               { return SemValue::keyword(VARCHAR); }
 
-{OPERATOR}                              {
-                                            yylval = SemValue();
-                                            yylval.code = OPERATOR;
-                                            yylval.opt = SemValue::opt(yytext);
-                                            return OPERATOR;
-                                        }
+{OPERATOR}                              { return *yytext; }
 
 {IDENTIFIER}                            {
                                             yylval = SemValue();
