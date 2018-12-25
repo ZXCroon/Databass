@@ -2,6 +2,7 @@
 #define RM_H
 
 #include "../utils/defs.h"
+#include "../utils/utils.h"
 #include "rm_rid.h"
 #include "../fs/bufmanager/BufPageManager.h"
 
@@ -14,7 +15,7 @@ struct FileHeaderPage {
 
 struct PageHeader {
     PageNum prevFree, nextFree;
-    Bits bitmap;
+    BitMap bitmap;
 };
 
 
@@ -24,9 +25,11 @@ public:
     RM_Record();
     RM_Record(int size, const RID &rid);
     ~RM_Record();
+    RM_Record &operator=(const RM_Record &rec);
 
     char *getData() const;
     RID getRid() const;
+    void setRid(const RID &rid);
 
 private:
     int size;
@@ -46,8 +49,9 @@ public:
     bool insertRec(const char *pData, RID &rid);
     bool deleteRec(const RID &rid);
     bool updateRec(const RM_Record &rec);
-    bool getFirstRid(RID &rid) const;
-    bool getNextRid(const RID &lastRid, RID &rid) const;
+    // bool getFirstRid(RID &rid) const;
+    void startVisiting();
+    bool getNextRid(RID &rid);
     int getFileId() const;
 
 private:
@@ -63,6 +67,8 @@ private:
     BufPageManager *bpm;
     const int fileId;
     int recordSize, maxRecordCnt, availPageCnt;
+    BitMap bmForScan;
+    int pnForScan;
 
 };
 
@@ -92,19 +98,18 @@ public:
     RM_FileScan();
     ~RM_FileScan();
 
-    void openScan(const RM_FileHandle &fileHandle, AttrType attrType,
+    void openScan(RM_FileHandle &fileHandle, AttrType attrType,
                 int attrLength, int attrOffset, CompOp compOp, void *value);
     RC getNextRec(RM_Record &rec);
     RC closeScan();
 
 private:
-    const RM_FileHandle *fileHandle;
+    RM_FileHandle *fileHandle;
     AttrType attrType;
     int attrLength, attrOffset;
     CompOp compOp;
     void *value;
-    RID rid;
-    bool open, start;
+    bool open;
 
 };
 

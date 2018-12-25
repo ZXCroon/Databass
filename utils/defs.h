@@ -70,7 +70,7 @@ const int MAXNAME = 24;
 const int MAXATTRS = 40;
 const int MAXSTRINGLEN = 255;
 
-const int RM_RECORD_MIN_SIZE = 32;
+const int RM_RECORD_MIN_SIZE = 8;
 const int RM_RECORD_MAX_SIZE = 2048;
 
 

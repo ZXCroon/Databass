@@ -54,7 +54,8 @@ void SM_Manager::showCurrentDb() {
             break;
         }
         RelcatLayout relcat = *(RelcatLayout *)(rec.getData());
-        std::cout << relcat.relName << std::endl;
+        print(relcat.relName, STRING, MAXNAME + 1);
+        std::cout << std::endl;
     }
 }
 

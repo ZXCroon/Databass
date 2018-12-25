@@ -1,4 +1,5 @@
 #include <cstring>
+#include <iostream>
 #include "utils.h"
 #include "defs.h"
 
@@ -111,4 +112,35 @@ bool validate(char *pData, AttrType attrType, int attrLength,
     }
 
     throw;
+}
+
+
+void print(void *value, AttrType attrType, int attrLength) {
+    switch (attrType) {
+
+    case INT:
+        std::cout << *(int *)value;
+        break;
+    case FLOAT:
+        std::cout << *(float *)value;
+        break;
+    case STRING: {
+        std::string str = std::string((char *)value, attrLength);
+        int p = str.find_last_not_of(' ');
+        str = str.substr(0, p + 1);
+        std::cout << str;
+        break;
+    }
+    case VARSTRING:
+        std::cout << (char *)value;
+        break;
+    case DATE:
+        unsigned short y = *(unsigned short *)value;
+        unsigned char m = *(unsigned char *)((char *)value + 2);
+        unsigned char d = *(unsigned char *)((char *)value + 3);
+        std::cout << y << "-" << m << "-" << d;
+        break;
+
+    }
+    std::cout.flush();
 }

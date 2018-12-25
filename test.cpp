@@ -18,11 +18,19 @@ void test1() {
     QL_Manager qlm(&smm, &ixm, &rmm);
 
     smm.createDb("trydb");
+    smm.openDb("trydb");
+
     AttrInfo attr1 = {"name", STRING, 10};
     AttrInfo attr2 = {"age", INT, 4};
     AttrInfo attrs[2] = {attr1, attr2};
-    smm.openDb("trydb");
     smm.createTable("student", 2, attrs);
+
+    AttrInfo attr3 = {"name", STRING, 10};
+    AttrInfo attr4 = {"id", INT, 4};
+    AttrInfo attr5 = {"teacher", STRING, 10};
+    AttrInfo attrs2[3] = {attr3, attr4, attr5};
+    smm.createTable("class", 3, attrs2);
+
     smm.showCurrentDb();
     smm.closeDb();
 }
