@@ -43,6 +43,22 @@ bool SM_Manager::openDb(const char *dbName) {
 }
 
 
+void SM_Manager::showCurrentDb() {
+    RM_FileScan scan;
+    scan.openScan(*relcatHandle, 0, 0, 0, NO_OP, NULL);
+    RM_Record rec;
+    RC rc;
+    while (true) {
+        rc = scan.getNextRec(rec);
+        if (rc == RM_FILESCAN_NONEXT) {
+            break;
+        }
+        RelcatLayout relcat = *(RelcatLayout *)(rec.getData());
+        std::cout << relcat.relName << std::endl;
+    }
+}
+
+
 bool SM_Manager::showDb(const char *dbName) {
     // TODO
 }
@@ -90,6 +106,7 @@ bool SM_Manager::createTable(const char *relName, int attrCount, AttrInfo *attri
         relcat.tupleLength += attr->attrLength;
     }
 
+    relcat.tupleLength = max(RM_RECORD_MIN_SIZE, (relcat.tupleLength + 3) / 4 * 4);
     relcatHandle->insertRec((char *)(&relcat), rid);
 
     rmm->createFile(getPath(dbName, relName), relcat.tupleLength);

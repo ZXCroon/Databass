@@ -26,7 +26,9 @@ RC IX_Manager::createIndex(const char *filename, int indexNo, AttrType attrType,
     hp.root = RID(-1, -1);
     hp.attrType = attrType;
     hp.attrLength = attrLength;
-    if (bpm->fileManager->writePage(fileId, 0, (BufType)(&hp), 0) != 0 or
+    char page[PAGE_SIZE];
+    memcpy(page, &hp, sizeof(hp));
+    if (bpm->fileManager->writePage(fileId, 0, (BufType)(page), 0) != 0 or
         bpm->fileManager->closeFile(fileId) != 0) {
             return IX_MANAGER_CREATEFAILED;
     }

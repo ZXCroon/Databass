@@ -1,4 +1,5 @@
 #include "rm.h"
+#include <bitset>
 
 
 RM_Manager::RM_Manager(BufPageManager *bpm) : bpm(bpm) {}
@@ -23,7 +24,9 @@ RC RM_Manager::createFile(const char *fileName, int recordSize) {
     hp.recordSize = recordSize;
     hp.firstFree = hp.lastFree = NO_PAGE;
     hp.availPageCnt = 0;
-    if (bpm->fileManager->writePage(fileId, 0, (BufType)(&hp), 0) != 0 or
+    char page[PAGE_SIZE];
+    memcpy(page, &hp, sizeof(hp));
+    if (bpm->fileManager->writePage(fileId, 0, (BufType)(page), 0) != 0 or
         bpm->fileManager->closeFile(fileId) != 0) {
         return RM_MANAGER_CREATEFAILED;
     }

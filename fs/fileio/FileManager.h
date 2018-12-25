@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <errno.h>
 #include "../utils/MyLinkList.h"
 #include "../utils/MyBitMap.h"
 #include "../utils/pagedef.h"
@@ -19,6 +20,7 @@ private:
     char pathBuf[500];
 	MyBitMap* fm;
 	MyBitMap* tm;
+    int maxFileId;
     char *fullName(const char *name) {
         strcpy(pathBuf, baseDir);
         strcat(pathBuf, name);
@@ -45,7 +47,7 @@ public:
 	/*
 	 * FilManager构造函数
 	 */
-	FileManager(const char* baseDir) {
+	FileManager(const char* baseDir) : maxFileId(0) {
 		fm = new MyBitMap(MAX_FILE_NUM, 1);
 		tm = new MyBitMap(MAX_TYPE_NUM, 1);
         strcpy(this->baseDir, baseDir);
@@ -74,6 +76,7 @@ public:
 		}
 		BufType b = buf + off;
 		error = write(f, (void*) b, PAGE_SIZE);
+        // std::cout << error << " " << strerror(errno) << std::endl;
 		return 0;
 	}
 	/*
@@ -105,7 +108,7 @@ public:
 	 * 返回:操作成功，返回0
 	 */
 	int closeFile(int fileID) {
-		fm->setBit(fileID, 1);
+		// fm->setBit(fileID, 1);
 		int f = fd[fileID];
 		close(f);
 		return 0;
@@ -117,8 +120,8 @@ public:
 	 * 返回:操作成功，返回true
 	 */
 	bool createFile(const char* name) {
-		_createFile(name);
-		return true;
+		return _createFile(name) == 0;
+		// return true;
 	}
 	/*
 	 * @函数名openFile
@@ -128,10 +131,10 @@ public:
 	 * 返回:如果成功打开，在fileID中存储为该文件分配的id，返回true，否则返回false
 	 */
 	bool openFile(const char* name, int& fileID) {
-		fileID = fm->findLeftOne();
-		fm->setBit(fileID, 0);
-		_openFile(name, fileID);
-		return true;
+		// fileID = fm->findLeftOne();
+		// fm->setBit(fileID, 0);
+        fileID = maxFileId ++;
+		return _openFile(name, fileID) == 0;
 	}
     bool deleteFile(const char*name) {
         return remove(fullName(name)) == 0;

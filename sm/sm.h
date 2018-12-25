@@ -53,6 +53,7 @@ public:
     bool dropDb(const char *dbName);
     bool openDb(const char *dbName);
     bool closeDb();
+    void showCurrentDb();
     bool showDb(const char *dbName);
     bool createTable(const char *relName, int attrCount, AttrInfo *attributes);
     bool dropTable(const char *relName);
