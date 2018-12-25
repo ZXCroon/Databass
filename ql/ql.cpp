@@ -18,7 +18,7 @@ void QL_Manager::insert(const char *relName, int nValues, const Value values[]) 
     }
 
     RM_FileHandle *handle;
-    rmm->openFile(getPath(dbName, relName), handle);
+    rmm->openFile(getPath(smm->dbName, relName), handle);
     char *data = new char[cat.relcat.tupleLength];
     for (int i = 0; i < cat.relcat.attrCount; ++i) {
         memcpy(data + cat.attrcats[i].offset, padValue(values[i].data, values[i].type, cat.attrcats[i].attrLength),
@@ -29,13 +29,17 @@ void QL_Manager::insert(const char *relName, int nValues, const Value values[]) 
     IX_IndexHandle *ixHandle;
     for (int i = 0; i < cat.relcat.attrCount; ++i) {
         if (cat.attrcats[i].indexNo != -1) {
-            ixm->openIndex(getPath(dbName, relName), cat.attrcats[i].indexNo, ixHandle);
+            ixm->openIndex(getPath(smm->dbName, relName), cat.attrcats[i].indexNo, ixHandle);
             ixHandle->insertEntry(data + cat.attrcats[i].offset, rid);
             ixm->closeIndex(*ixHandle);
         }
     }
     delete[] data;
     rmm->closeFile(*handle);
+    // int t;
+    // if (strcmp(relName, "class") == 0) {
+        // cin >> t;
+    // }
 }
 
 
@@ -47,7 +51,7 @@ void QL_Manager::del(const char *relName, int nConditions, const Condition condi
     RM_Record rec;
     RID rid;
     vector<RID> rids;
-    rmm->openFile(getPath(dbName, relName), handle);
+    rmm->openFile(getPath(smm->dbName, relName), handle);
     RM_FileScan fileScan;
     IX_IndexScan indexScan;
 
@@ -55,7 +59,7 @@ void QL_Manager::del(const char *relName, int nConditions, const Condition condi
     decideStrategy(relName, relName, cat, cat, NO_JOIN, nConditions, conditions, strat);
 
     if (strat.strat1.attrcat != NULL) {
-        ixm->openIndex(getPath(dbName, relName), strat.strat1.attrcat->indexNo, ixHandle);
+        ixm->openIndex(getPath(smm->dbName, relName), strat.strat1.attrcat->indexNo, ixHandle);
         indexScan.openScan(*ixHandle, strat.strat1.compOp,
                 padValue(strat.strat1.value.data, strat.strat1.attrcat->attrType, strat.strat1.attrcat->attrLength));
         while (true) {
@@ -86,7 +90,7 @@ void QL_Manager::del(const char *relName, int nConditions, const Condition condi
 
     for (int i = 0; i < cat.relcat.attrCount; ++i) {
         if (cat.attrcats[i].indexNo != -1) {
-            ixm->openIndex(getPath(dbName, relName), cat.attrcats[i].indexNo, ixHandle);
+            ixm->openIndex(getPath(smm->dbName, relName), cat.attrcats[i].indexNo, ixHandle);
             for (int k = 0; k < rids.size(); ++k) {
                 handle->getRec(rids[k], rec);
                 ixHandle->deleteEntry(rec.getData() + cat.attrcats[i].offset, rids[k]);
@@ -111,7 +115,7 @@ void QL_Manager::update(const char *relName, const RelAttr &updAttr, const int b
     RM_Record rec;
     RID rid;
     vector<RID> rids;
-    rmm->openFile(getPath(dbName, relName), handle);
+    rmm->openFile(getPath(smm->dbName, relName), handle);
     RM_FileScan fileScan;
     IX_IndexScan indexScan;
 
@@ -119,7 +123,7 @@ void QL_Manager::update(const char *relName, const RelAttr &updAttr, const int b
     decideStrategy(relName, relName, cat, cat, NO_JOIN, nConditions, conditions, strat);
 
     if (strat.strat1.attrcat != NULL) {
-        ixm->openIndex(getPath(dbName, relName), strat.strat1.attrcat->indexNo, ixHandle);
+        ixm->openIndex(getPath(smm->dbName, relName), strat.strat1.attrcat->indexNo, ixHandle);
         indexScan.openScan(*ixHandle, strat.strat1.compOp,
                 padValue(strat.strat1.value.data, strat.strat1.attrcat->attrType, strat.strat1.attrcat->attrLength));
         while (true) {
@@ -161,7 +165,7 @@ void QL_Manager::update(const char *relName, const RelAttr &updAttr, const int b
     }
 
     if (updAc->indexNo != -1) {
-        ixm->openIndex(getPath(dbName, relName), updAc->indexNo, ixHandle);
+        ixm->openIndex(getPath(smm->dbName, relName), updAc->indexNo, ixHandle);
         for (int k = 0; k < rids.size(); ++k) {
             handle->getRec(rids[k], rec);
             ixHandle->deleteEntry(rec.getData() + updAc->offset, rids[k]);

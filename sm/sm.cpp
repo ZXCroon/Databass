@@ -55,10 +55,10 @@ void SM_Manager::showCurrentDb() {
             break;
         }
         RelcatLayout relcat = *(RelcatLayout *)(rec.getData());
-        print(relcat.relName, STRING, MAXNAME + 1);
+        print(relcat.relName, VARSTRING, MAXNAME + 1);
         std::cout << ":";
 
-        scan2.openScan(*attrcatHandle, STRING, MAXNAME + 1, 0, EQ_OP, relcat.relName);
+        scan2.openScan(*attrcatHandle, VARSTRING, MAXNAME + 1, 0, EQ_OP, relcat.relName);
         while (true) {
             rc = scan2.getNextRec(rec);
             if (rc == RM_FILESCAN_NONEXT) {
@@ -66,7 +66,7 @@ void SM_Manager::showCurrentDb() {
             }
             AttrcatLayout attrcat = *(AttrcatLayout *)(rec.getData());
             std::cout << " ";
-            print(attrcat.attrName, STRING, MAXNAME + 1);
+            print(attrcat.attrName, VARSTRING, MAXNAME + 1);
         }
         scan2.closeScan();
         std::cout << std::endl;
@@ -100,7 +100,7 @@ bool SM_Manager::createTable(const char *relName, int attrCount, AttrInfo *attri
 
     RelcatLayout relcat;
     strcpy(relcat.relName, relName);
-    padName(relcat.relName);
+    // padName(relcat.relName);
     relcat.tupleLength = 0;
     relcat.attrCount = attrCount;
     relcat.nextIndex = 0;
@@ -109,8 +109,8 @@ bool SM_Manager::createTable(const char *relName, int attrCount, AttrInfo *attri
         AttrcatLayout attrcat;
         strcpy(attrcat.relName, relName);
         strcpy(attrcat.attrName, attr->attrName);
-        padName(attrcat.relName);
-        padName(attrcat.attrName);
+        // padName(attrcat.relName);
+        // padName(attrcat.attrName);
         attrcat.offset = relcat.tupleLength;
         attrcat.attrType = attr->attrType;
         attrcat.attrLength = attr->attrLength;
@@ -249,11 +249,12 @@ void SM_Manager::padName(char name[MAXNAME + 1], char padding) {
 
 
 bool SM_Manager::getRelcatRid(const char *relName, RID &rid) {
-    char relNamePad[MAXNAME + 1];
-    strcpy(relNamePad, relName);
-    padName(relNamePad);
+    // char relNamePad[MAXNAME + 1];
+    // strcpy(relNamePad, relName);
+    // padName(relNamePad);
     RM_FileScan scan;
-    scan.openScan(*relcatHandle, STRING, MAXNAME + 1, 0, EQ_OP, relNamePad);
+    // scan.openScan(*relcatHandle, STRING, MAXNAME + 1, 0, EQ_OP, relNamePad);
+    scan.openScan(*relcatHandle, VARSTRING, MAXNAME + 1, 0, EQ_OP, relName);
     RM_Record rec;
     if (scan.getNextRec(rec) == RM_FILESCAN_NONEXT) {
         return false;
@@ -264,25 +265,25 @@ bool SM_Manager::getRelcatRid(const char *relName, RID &rid) {
 
 
 bool SM_Manager::getAttrcatRids(const char *relName, const char *attrName, RID *rids, int &ridCount) {
-    char relNamePad[MAXNAME + 1];
-    strcpy(relNamePad, relName);
-    padName(relNamePad);
-    char attrNamePad[MAXNAME + 1];
-    if (attrName) {
-        strcpy(attrNamePad, attrName);
-        padName(attrNamePad);
-    }
+    // char relNamePad[MAXNAME + 1];
+    // strcpy(relNamePad, relName);
+    // padName(relNamePad);
+    // char attrNamePad[MAXNAME + 1];
+    // if (attrName) {
+        // strcpy(attrNamePad, attrName);
+        // padName(attrNamePad);
+    // }
 
     ridCount = 0;
     RM_FileScan scan;
     RM_Record rec;
     RID rid;
-    scan.openScan(*attrcatHandle, STRING, MAXNAME + 1, 0, EQ_OP, relNamePad);
+    scan.openScan(*attrcatHandle, VARSTRING, MAXNAME + 1, 0, EQ_OP, relName);
     while (scan.getNextRec(rec) == 0) {
         rid = rec.getRid();
         AttrcatLayout attrcat;
         getAttrcatFromRid(rid, attrcat);
-        if (!attrName || strcmp(attrcat.attrName, attrNamePad) == 0) {
+        if (!attrName || strcmp(attrcat.attrName, attrName) == 0) {
             rids[ridCount] = rid;
             ++ridCount;
         }

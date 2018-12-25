@@ -4,7 +4,7 @@
 #include "defs.h"
 
 
-bool isNull(void *value, int attrLength) {
+bool isNull(const void *value, int attrLength) {
     for (int i = 0; i < attrLength; ++i) {
         if (*((char *)value) != 0) {
             return false;
@@ -14,7 +14,7 @@ bool isNull(void *value, int attrLength) {
 }
 
 
-int cmpDate(char *val1, char *val2) {
+int cmpDate(const char *val1, const char *val2) {
   unsigned short y1 = *(unsigned short *)val1;
   unsigned char m1 = *(unsigned char *)(val1 + 2);
   unsigned char d1 = *(unsigned char *)(val1 + 3);
@@ -44,8 +44,8 @@ int cmpDate(char *val1, char *val2) {
 }
 
 
-bool validate(char *pData, AttrType attrType, int attrLength,
-                           CompOp compOp, void *value) {
+bool validate(const char *pData, AttrType attrType, int attrLength,
+                           CompOp compOp, const void *value) {
     if (compOp == NO_OP) {
         return true;
     }
@@ -90,7 +90,7 @@ bool validate(char *pData, AttrType attrType, int attrLength,
     case VARSTRING:
     case DATE: {
         int cmp;
-        char *u = pData, *v = (char *)value;
+        const char *u = pData, *v = (char *)value;
         if (attrType == STRING) {
             cmp = strncmp(u, v, attrLength);
         } else if (attrType == VARSTRING) {
@@ -115,7 +115,7 @@ bool validate(char *pData, AttrType attrType, int attrLength,
 }
 
 
-void print(void *value, AttrType attrType, int attrLength) {
+void print(const void *value, AttrType attrType, int attrLength) {
     switch (attrType) {
 
     case INT:

@@ -99,7 +99,7 @@ public:
     ~RM_FileScan();
 
     void openScan(RM_FileHandle &fileHandle, AttrType attrType,
-                int attrLength, int attrOffset, CompOp compOp, void *value);
+                int attrLength, int attrOffset, CompOp compOp, const void *value);
     RC getNextRec(RM_Record &rec);
     RC closeScan();
 
@@ -108,7 +108,7 @@ private:
     AttrType attrType;
     int attrLength, attrOffset;
     CompOp compOp;
-    void *value;
+    const void *value;
     bool open;
 
 };

@@ -4,10 +4,8 @@
 
 
 RC QL_Manager::select(int nSelAttrs, const RelAttr selAttrs[],
-                      const char* relation1, const char *relation2, const JoinType &joinType,
-                      int nRelations, const char * const relations[],
-                      int nConditions,
-                      const Condition conditions[]) {
+                      const char* relation1, const char *relation2, JoinType joinType,
+                      int nConditions, const Condition conditions[]) {
 
     Catalog cat1, cat2;
     if (!getCatalog(relation1, cat1)) {
@@ -32,9 +30,9 @@ RC QL_Manager::select(int nSelAttrs, const RelAttr selAttrs[],
 
 
     RM_FileHandle *handle1, *handle2;
-    rmm->openFile(getPath(dbName, relation1), handle1);
+    rmm->openFile(getPath(smm->dbName, relation1), handle1);
     if (joinType != NO_JOIN) {
-        rmm->openFile(getPath(dbName, relation2), handle2);
+        rmm->openFile(getPath(smm->dbName, relation2), handle2);
     }
     IX_IndexHandle *ixHandle1, *ixHandle2;
     RM_FileScan fileScan;
@@ -45,7 +43,7 @@ RC QL_Manager::select(int nSelAttrs, const RelAttr selAttrs[],
     if (joinType == NO_JOIN || strat.outer == 0) {
         std::vector<RID> rids1, rids2;
         if (strat.strat1.attrcat != NULL) {
-            ixm->openIndex(getPath(dbName, relation1), strat.strat1.attrcat->indexNo, ixHandle1);
+            ixm->openIndex(getPath(smm->dbName, relation1), strat.strat1.attrcat->indexNo, ixHandle1);
             indexScan.openScan(*ixHandle1, strat.strat1.compOp,
                     padValue(strat.strat1.value.data, strat.strat1.attrcat->attrType, strat.strat1.attrcat->attrLength));
             while (true) {
@@ -68,7 +66,7 @@ RC QL_Manager::select(int nSelAttrs, const RelAttr selAttrs[],
                     break;
                 }
                 if (singleValidate(relation1, cat1, nConditions, conditions, rec)) {
-                    rids1.push_back(rid);
+                    rids1.push_back(rec.getRid());
                 }
             }
             fileScan.closeScan();
@@ -76,7 +74,7 @@ RC QL_Manager::select(int nSelAttrs, const RelAttr selAttrs[],
 
         if (joinType != NO_JOIN) {
             if (strat.strat2.attrcat != NULL) {
-                ixm->openIndex(getPath(dbName, relation2), strat.strat2.attrcat->indexNo, ixHandle2);
+                ixm->openIndex(getPath(smm->dbName, relation2), strat.strat2.attrcat->indexNo, ixHandle2);
                 indexScan.openScan(*ixHandle2, strat.strat2.compOp,
                         padValue(strat.strat2.value.data, strat.strat2.attrcat->attrType, strat.strat2.attrcat->attrLength));
                 while (true) {
@@ -137,6 +135,25 @@ RC QL_Manager::select(int nSelAttrs, const RelAttr selAttrs[],
             }
             delete[] visited1;
             delete[] visited2;
+        } else {
+            std::cout << "|";
+            for (int i = 0; i < nSelAttrs; ++i) {
+                std::cout << " ";
+                print(selAttrs[i].attrName, VARSTRING, MAXNAME + 1);
+                std::cout << " |";
+            }
+            std::cout << std::endl;
+            for (int i = 0; i < rids1.size(); ++i) {
+                std::cout << "|";
+                handle1->getRec(rids1[i], rec);
+                for (int j = 0; j < nSelAttrs; ++j) {
+                    const AttrcatLayout *ac = locateAttrcat(relation1, cat1, selAttrs[j]);
+                    std::cout << " ";
+                    print(rec.getData() + ac->offset, ac->attrType, ac->attrLength);
+                    std::cout << " |";
+                }
+                std::cout << std::endl;
+            }
         }
     }
 

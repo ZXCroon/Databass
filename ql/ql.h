@@ -56,10 +56,8 @@ public:
     ~QL_Manager();
 
     RC select(int nSelAttrs, const RelAttr selAttrs[],
-              const char* relation1, const char *relation2, const JoinType &joinType,
-              int nRelations, const char * const relations[],
-              int nConditions,
-              const Condition conditions[]);
+              const char* relation1, const char *relation2, JoinType joinType,
+              int nConditions, const Condition conditions[]);
     void insert(const char *relName, int nValues, const Value values[]);
     void del(const char *relName, int nConditions, const Condition conditions[]);
     void update(const char *relName, const RelAttr &updAttr, const int bIsValue,
@@ -83,7 +81,7 @@ private:
     SM_Manager *smm;
     IX_Manager *ixm;
     RM_Manager *rmm;
-    char *dbName;
+    // char *dbName;
     char valBuf[MAXSTRINGLEN];
     char pathBuf[MAXNAME * 2 + 10];
 };

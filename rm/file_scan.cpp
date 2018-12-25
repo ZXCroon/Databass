@@ -10,7 +10,7 @@ RM_FileScan::~RM_FileScan() {}
 
 
 void RM_FileScan::openScan(RM_FileHandle &fileHandle, AttrType attrType,
-                         int attrLength, int attrOffset, CompOp compOp, void *value) {
+                         int attrLength, int attrOffset, CompOp compOp, const void *value) {
     this->fileHandle = &fileHandle;
     this->attrType = attrType;
     this->attrLength = attrLength;

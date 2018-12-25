@@ -4,14 +4,14 @@
 #include "defs.h"
 
 
-bool isNull(void *value, int attrLength);
+bool isNull(const void *value, int attrLength);
 
-int cmpDate(char *val1, char *val2);
+int cmpDate(const char *val1, const char *val2);
 
-bool validate(char *pData, AttrType attrType, int attrLength, CompOp compOp, void *value);
+bool validate(const char *pData, AttrType attrType, int attrLength, CompOp compOp, const void *value);
 
 
-void print(void *value, AttrType attrType, int attrLength);
+void print(const void *value, AttrType attrType, int attrLength);
 
 
 typedef unsigned long long ULL;
