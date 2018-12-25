@@ -46,6 +46,7 @@ bool SM_Manager::openDb(const char *dbName) {
 void SM_Manager::showCurrentDb() {
     RM_FileScan scan;
     scan.openScan(*relcatHandle, 0, 0, 0, NO_OP, NULL);
+    RM_FileScan scan2;
     RM_Record rec;
     RC rc;
     while (true) {
@@ -55,8 +56,22 @@ void SM_Manager::showCurrentDb() {
         }
         RelcatLayout relcat = *(RelcatLayout *)(rec.getData());
         print(relcat.relName, STRING, MAXNAME + 1);
+        std::cout << ":";
+
+        scan2.openScan(*attrcatHandle, STRING, MAXNAME + 1, 0, EQ_OP, relcat.relName);
+        while (true) {
+            rc = scan2.getNextRec(rec);
+            if (rc == RM_FILESCAN_NONEXT) {
+                break;
+            }
+            AttrcatLayout attrcat = *(AttrcatLayout *)(rec.getData());
+            std::cout << " ";
+            print(attrcat.attrName, STRING, MAXNAME + 1);
+        }
+        scan2.closeScan();
         std::cout << std::endl;
     }
+    scan.closeScan();
 }
 
 

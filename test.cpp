@@ -32,6 +32,8 @@ void test1() {
     smm.createTable("class", 3, attrs2);
 
     smm.showCurrentDb();
+    smm.dropTable("student");
+    smm.showCurrentDb();
     smm.closeDb();
 }
 
