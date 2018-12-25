@@ -3,6 +3,9 @@
 #include <vector>
 
 
+typedef std::pair<RID, RID> PRID;
+
+
 RC QL_Manager::select(int nSelAttrs, const RelAttr selAttrs[],
                       const char* relation1, const char *relation2, JoinType joinType,
                       int nConditions, const Condition conditions[]) {
@@ -39,6 +42,8 @@ RC QL_Manager::select(int nSelAttrs, const RelAttr selAttrs[],
     IX_IndexScan indexScan;
     RID rid;
     RM_Record rec, rec_;
+    std::vector<RID> rids;
+    std::vector<PRID> prids;
 
     if (joinType == NO_JOIN || strat.outer == 0) {
         std::vector<RID> rids1, rids2;
@@ -71,6 +76,7 @@ RC QL_Manager::select(int nSelAttrs, const RelAttr selAttrs[],
             }
             fileScan.closeScan();
         }
+        rids = rids1;
 
         if (joinType != NO_JOIN) {
             if (strat.strat2.attrcat != NULL) {
@@ -97,7 +103,7 @@ RC QL_Manager::select(int nSelAttrs, const RelAttr selAttrs[],
                         break;
                     }
                     if (singleValidate(relation2, cat2, nConditions, conditions, rec)) {
-                        rids2.push_back(rid);
+                        rids2.push_back(rec.getRid());
                     }
                 }
                 fileScan.closeScan();
@@ -111,9 +117,9 @@ RC QL_Manager::select(int nSelAttrs, const RelAttr selAttrs[],
             for (int i = 0; i < rids1.size(); ++i) {
                 for (int j = 0; j < rids2.size(); ++j) {
                     handle1->getRec(rids1[i], rec1);
-                    handle2->getRec(rids2[i], rec2);
+                    handle2->getRec(rids2[j], rec2);
                     if (pairValidate(relation1, relation2, cat1, cat2, nConditions, conditions, rec1, rec2)) {
-                        // TODO
+                        prids.push_back(std::make_pair(rids1[i], rids2[j]));
                         visited1[i] = visited2[j] = true;
                     }
                 }
@@ -122,38 +128,67 @@ RC QL_Manager::select(int nSelAttrs, const RelAttr selAttrs[],
             if (joinType == LEFT_JOIN || joinType == FULL_JOIN) {
                 for (int i = 0; i < rids1.size(); ++i) {
                     if (!visited1[i]) {
-                        // TODO
+                        prids.push_back(std::make_pair(rids1[i], RID(-1, -1)));
                     }
                 }
             }
             if (joinType == RIGHT_JOIN || joinType == FULL_JOIN) {
                 for (int j = 0; j < rids2.size(); ++j) {
                     if (!visited2[j]) {
-                        // TODO
+                        prids.push_back(std::make_pair(RID(-1, -1), rids2[j]));
                     }
                 }
             }
             delete[] visited1;
             delete[] visited2;
-        } else {
+        } 
+    }
+
+    // nested-loop case
+
+    // output
+    std::cout << "|";
+    for (int i = 0; i < nSelAttrs; ++i) {
+        std::cout << " ";
+        print(selAttrs[i].attrName, VARSTRING, MAXNAME + 1);
+        std::cout << " |";
+    }
+    std::cout << std::endl;
+    if (joinType == NO_JOIN) {
+        for (int i = 0; i < rids.size(); ++i) {
             std::cout << "|";
-            for (int i = 0; i < nSelAttrs; ++i) {
+            handle1->getRec(rids[i], rec);
+            for (int j = 0; j < nSelAttrs; ++j) {
+                const AttrcatLayout *ac = locateAttrcat(relation1, cat1, selAttrs[j]);
                 std::cout << " ";
-                print(selAttrs[i].attrName, VARSTRING, MAXNAME + 1);
+                print(rec.getData() + ac->offset, ac->attrType, ac->attrLength);
                 std::cout << " |";
             }
             std::cout << std::endl;
-            for (int i = 0; i < rids1.size(); ++i) {
-                std::cout << "|";
-                handle1->getRec(rids1[i], rec);
-                for (int j = 0; j < nSelAttrs; ++j) {
-                    const AttrcatLayout *ac = locateAttrcat(relation1, cat1, selAttrs[j]);
-                    std::cout << " ";
-                    print(rec.getData() + ac->offset, ac->attrType, ac->attrLength);
-                    std::cout << " |";
-                }
-                std::cout << std::endl;
+        }
+    } else {
+        for (int i = 0; i < prids.size(); ++i) {
+            std::cout << "|";
+            if (prids[i].first != RID(-1, -1)) {
+                handle1->getRec(prids[i].first, rec);
             }
+            if (prids[i].second != RID(-1, -1)) {
+                handle2->getRec(prids[i].second, rec_);
+            }
+            for (int j = 0; j < nSelAttrs; ++j) {
+                std::cout << " ";
+                const AttrcatLayout *ac = locateAttrcat(relation1, cat1, selAttrs[j]);
+                const AttrcatLayout *ac_ = locateAttrcat(relation2, cat2, selAttrs[j]);
+                if (ac != NULL && prids[i].first != RID(-1, -1)) {
+                    print(rec.getData() + ac->offset, ac->attrType, ac->attrLength);
+                } else if (ac_ != NULL && prids[i].second != RID(-1, -1)) {
+                    print(rec_.getData() + ac_->offset, ac_->attrType, ac_->attrLength);
+                } else {
+                    std::cout << "NULL";
+                }
+                std::cout << " |";
+            }
+            std::cout << std::endl;
         }
     }
 
@@ -209,6 +244,23 @@ bool QL_Manager::pairValidate(const char *relation1, const char *relation2,
             if (!validate(rec1.getData() + acl->offset, acl->attrType, acl->attrLength, cond.op, rec2.getData() + acr->offset)) {
                 return false;
             }
+        }
+    }
+
+    // hidden equalities
+    for (int i = 0; i < cat1.relcat.attrCount; ++i) {
+        for (int j = 0; j < cat2.relcat.attrCount; ++j) {
+            if (strcmp(cat1.attrcats[i].attrName, cat2.attrcats[j].attrName) != 0) {
+                continue;
+            }
+            RelAttr ra = {NULL, cat1.attrcats[i].attrName};
+        const AttrcatLayout *acl = locateAttrcat(relation1, cat1, ra);
+        const AttrcatLayout *acr = locateAttrcat(relation2, cat2, ra);
+        if (acl != NULL && acr != NULL) {
+            if (!validate(rec1.getData() + acl->offset, acl->attrType, acl->attrLength, EQ_OP, rec2.getData() + acr->offset)) {
+                return false;
+            }
+        }
         }
     }
     return true;
@@ -375,9 +427,10 @@ bool QL_Manager::decideStrategy(const char *relation1, const char *relation2,
     } else if (joinType == INNER_JOIN) {
         if (strat.strat2.attrcat != NULL && strat.strat2.auxAttrcat != NULL) {
             strat.outer = 1;
-        }
-        if (strat.strat1.attrcat != NULL && strat.strat1.auxAttrcat != NULL) {
+        } else if (strat.strat1.attrcat != NULL && strat.strat1.auxAttrcat != NULL) {
             strat.outer = 2;
+        } else {
+            strat.outer = 0;
         }
     } else {
         // if cross-relation attributes cannot be leveraged, may as well post-join

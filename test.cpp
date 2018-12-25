@@ -31,6 +31,11 @@ void test1() {
     AttrInfo attrs2[3] = {attr3, attr4, attr5};
     smm.createTable("class", 3, attrs2);
 
+    AttrInfo attr6 = {"id", INT, 4};
+    AttrInfo attr7 = {"number", INT, 4};
+    AttrInfo attrs3[2] = {attr6, attr7};
+    smm.createTable("sel", 2, attrs3);
+
     smm.showCurrentDb();
     smm.dropTable("student");
     smm.showCurrentDb();
@@ -56,9 +61,20 @@ void test1() {
     Value values2[] = {v21, v22, v23};
     qlm.insert("class", 3, values2);
 
+    int id3 = 3452;
+    int number1 = 70, number2 = 100;
+    Value v31 = {INT, &id1};
+    Value v32 = {INT, &number1};
+    Value values3[] = {v31, v32};
+    qlm.insert("sel", 2, values3);
+    Value v41 = {INT, &id3};
+    Value v42 = {INT, &number2};
+    Value values4[] = {v41, v42};
+    qlm.insert("sel", 2, values4);
+
     // SELECT
-    std::cout << "**** SELECT ****" << std::endl;
-    RelAttr ra1 = {NULL, "id"}, ra2 = {"class", "name"};
+    std::cout << "**** SELECT1 ****" << std::endl;
+    RelAttr ra1 = {NULL, "id"}, ra2 = {"class", "name"}, ra3 = {"sel", "number"};
     RelAttr ras[] = {ra1, ra2};
     RelAttr cra1 = {NULL, "id"};
     int cid = 234;
@@ -70,6 +86,9 @@ void test1() {
     Condition cond2 = {cra2, EQ_OP, 0, cra2, cv2};
     Condition conds[] = {cond1, cond2};
     qlm.select(2, ras, "class", NULL, NO_JOIN, 2, conds);
+    std::cout << "**** SELECT2 ****" << std::endl;
+    RelAttr ras_[] = {ra1, ra2, ra3};
+    qlm.select(3, ras_, "sel", "class", FULL_JOIN, 0, NULL);
 
     smm.closeDb();
 }
