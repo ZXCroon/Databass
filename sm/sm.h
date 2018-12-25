@@ -7,9 +7,12 @@
 
 
 struct AttrInfo {
-    char attrName[MAXNAME + 1];
+    char attrName[MAXNAME + 1], refTbname[MAXNAME + 1], refColname[MAXNAME + 1];
     AttrType attrType;
     int attrLength;
+    NotNull notNull;
+    IsPrimary isPrimary;
+    IsForeign isForeign;
 };
 
 
@@ -53,6 +56,7 @@ public:
     bool dropDb(const char *dbName);
     bool openDb(const char *dbName);
     bool closeDb();
+    void showCurrentDb();
     bool showDb(const char *dbName);
     bool createTable(const char *relName, int attrCount, AttrInfo *attributes);
     bool dropTable(const char *relName);

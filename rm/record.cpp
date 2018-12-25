@@ -14,6 +14,18 @@ RM_Record::~RM_Record() {
 }
 
 
+RM_Record &RM_Record::operator=(const RM_Record &rec) {
+    this->size = rec.size;
+    if (this->pData != NULL) {
+        delete[] this->pData;
+    }
+    this->pData = new char[rec.size];
+    memcpy(this->pData, rec.pData, rec.size);
+    this->rid = rec.rid;
+    return *this;
+}
+
+
 char *RM_Record::getData() const {
     return pData;
 }
@@ -21,4 +33,9 @@ char *RM_Record::getData() const {
 
 RID RM_Record::getRid() const {
     return rid;
+}
+
+
+void RM_Record::setRid(const RID &rid) {
+    this->rid = rid;
 }

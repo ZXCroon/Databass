@@ -13,6 +13,7 @@ public:
     PageNum getPageNum() const;
     SlotNum getSlotNum() const;
 
+    RID &operator = (const RID &r);
     bool operator < (const RID &r);
     bool operator > (const RID &r);
     bool operator == (const RID &r);

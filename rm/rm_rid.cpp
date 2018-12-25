@@ -17,6 +17,13 @@ SlotNum RID::getSlotNum() const {
 }
 
 
+RID &RID::operator = (const RID &r) {
+    this->pageNum = r.pageNum;
+    this->slotNum = r.slotNum;
+    return *this;
+}
+
+
 bool RID::operator < (const RID &r) {
     return pageNum < r.pageNum || (pageNum == r.pageNum && slotNum < r.slotNum);
 }

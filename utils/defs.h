@@ -21,6 +21,9 @@ const int GE_OP = 4;
 const int NE_OP = 5;
 const int IS_OP = 6;
 const int NO_OP = 7;
+const int AND_OP = 8;
+const int ISNULL_OP = 9;
+const int NOTNULL_OP = 10;
 
 
 //
@@ -36,12 +39,37 @@ const int DATE = 4;
 
 //
 // JOIN Types
+// 
 typedef int JoinType;
 const int NO_JOIN = 0;
 const int INNER_JOIN = 1;
 const int LEFT_JOIN = 2;
 const int RIGHT_JOIN = 3;
 const int FULL_JOIN = 4;
+
+
+// 
+// NOT NULL
+// 
+typedef int NotNull;
+const int CAN_BE_NULL = 0;
+const int NOT_NULL = 1;
+
+
+// 
+// IS PRIMARY
+// 
+typedef int IsPrimary;
+const int NOT_PRIMARY = 0;
+const int IS_PRIMARY = 1;
+
+
+// 
+// IS FOREIGN
+// 
+typedef int IsForeign;
+const int NOT_FOREIGN = 0;
+const int IS_FOREIGN = 1;
 
 
 //
@@ -70,7 +98,7 @@ const int MAXNAME = 24;
 const int MAXATTRS = 40;
 const int MAXSTRINGLEN = 255;
 
-const int RM_RECORD_MIN_SIZE = 32;
+const int RM_RECORD_MIN_SIZE = 8;
 const int RM_RECORD_MAX_SIZE = 2048;
 
 
