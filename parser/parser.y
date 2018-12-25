@@ -374,3 +374,27 @@ TableList           :   IDENTIFIER
                     ;
 
 %%
+
+void yyerror(const char *s) {}
+
+int main(int argc, char **argv) {
+    if (argc > 2) {
+        std::cout << "Usage: main [filename]" << std::endl;
+        return -1;
+    }
+
+    FILE *pFile = NULL;
+    if (argc == 2) {
+        pFile = fopen(argv[1], "r");
+        if (!pFile) {
+            std::cout << "Input File not Exist!" << std::endl;
+            return -1;
+        }
+        yyin = pFile;
+        yyparse();
+    }
+    if (argc == 1) {
+        yyparse();
+    }
+    return 0;
+}
