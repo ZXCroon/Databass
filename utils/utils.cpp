@@ -126,8 +126,7 @@ void print(const void *value, AttrType attrType, int attrLength) {
         break;
     case STRING: {
         std::string str = std::string((char *)value, attrLength);
-        int p = str.find_last_not_of(' ');
-        str = str.substr(0, p + 1);
+        str.erase(str.find_last_not_of(" ") + 1);
         std::cout << str;
         break;
     }

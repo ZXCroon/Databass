@@ -247,7 +247,7 @@ void *QL_Manager::padValue(void *value, AttrType attrType, int attrLength) {
     }
     int len = strlen((const char *)value);
     memset(valBuf, ' ', attrLength);
-    strncpy(valBuf, (char *)value, attrLength);
+    strcpy(valBuf, (char *)value);
     if (len < attrLength) {
         valBuf[len] = ' ';
     }
