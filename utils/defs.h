@@ -25,6 +25,7 @@ const int NO_OP = 7;
 const int AND_OP = 8;
 const int ISNULL_OP = 9;
 const int NOTNULL_OP = 10;
+const int LIKE_OP = 11;
 
 
 //

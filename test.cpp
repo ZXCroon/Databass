@@ -153,6 +153,20 @@ void test2() {
         qlm.insert("people", 5, values);
     }
     {
+        char name[] = "Qiqi Wang";
+        int age = 20;
+        int id = 2342423;
+        char sex[] = "F";
+        char date_of_birth[] = "   1998- 02  - 22  ";
+        Value v1 = {STRING, name};
+        Value v2 = {INT, &age};
+        Value v3 = {INT, &id};
+        Value v4 = {STRING, sex};
+        Value v5 = {STRING, date_of_birth};
+        Value values[] = {v1, v2, v3, v4, v5};
+        qlm.insert("people", 5, values);
+    }
+    {
         char name[] = "Zixi Cai";
         // int age = 22;
         int id = 1523412;
@@ -179,6 +193,30 @@ void test2() {
         Value v5 = {STRING, date_of_birth};
         Value values[] = {v1, v2, v3, v4, v5};
         qlm.insert("people", 5, values);
+    }
+    {
+        char name[] = "Zemin Jiang";
+        int age = 92;
+        int id = 534164;
+        char sex[] = "M";
+        char date_of_birth[] = "1926/ 8/17 ";
+        Value v1 = {STRING, name};
+        Value v2 = {INT, &age};
+        Value v3 = {INT, &id};
+        Value v4 = {STRING, sex};
+        Value v5 = {STRING, date_of_birth};
+        Value values[] = {v1, v2, v3, v4, v5};
+        qlm.insert("people", 5, values);
+    }
+    {
+        RelAttr ra = {NULL, "id"};
+        RelAttr rra = {"people", "age"};
+        RelAttr cra = {NULL, "sex"};
+        char sex[] = "F";
+        Value v = {STRING, sex};
+        Condition cond = {cra, EQ_OP, false, cra, v};
+        Condition conds[] = {cond};
+        qlm.update("people", ra, false, rra, v, 1, conds);
     }
     {
         RelAttr ra1 = {NULL, "id"};

@@ -25,7 +25,7 @@ void QL_Manager::insert(const char *relName, int nValues, Value values[]) {
     RM_FileHandle *handle;
     rmm->openFile(getPath(smm->dbName, relName), handle);
     for (int i = 0; i < cat.relcat.attrCount; ++i) {
-        if (!checkUnique(values[i], &(cat.attrcats[i]), handle)) {
+        if (!checkUnique(values[i], &(cat.attrcats[i]), handle) || !checkReference(values[i], &(cat.attrcats[i]))) {
             rmm->closeFile(*handle);
             return;
         }
@@ -164,23 +164,23 @@ void QL_Manager::update(const char *relName, const RelAttr &updAttr, const int b
         fileScan.closeScan();
     }
 
-    const AttrcatLayout *updAc = locateAttrcat(relName, cat, updAttr);
+    const AttrcatLayout *updAc = locateAttrcat(relName, cat, updAttr), *rhsAc;
     if (updAc == NULL) {
         return;
     }
-    Value rhsValue_;
+    Value rhsValue_ = rhsValue;
     if (bIsValue) {
         rhsValue_ = rhsValue;
+        if (!filterValue(rhsValue_, updAc) || !checkUnique(rhsValue, updAc, handle) || !checkReference(rhsValue, updAc)) {
+            return;
+        }
     } else {
-        const AttrcatLayout *rhsAc = locateAttrcat(relName, cat, rhsRelAttr);
+        rhsAc = locateAttrcat(relName, cat, rhsRelAttr);
         rhsValue_.type = rhsAc->attrType;
         rhsValue_.data = new char[rhsAc->attrLength];
         memcpy(rhsValue_.data, rhsValue.data, rhsAc->attrLength);
     }
-    if (!filterValue(rhsValue_, updAc)) {
-        if (!bIsValue) {
-            delete[] (char *)rhsValue_.data;
-        }
+    if (bIsValue && !filterValue(rhsValue_, updAc)) {
         return;
     }
 
@@ -193,6 +193,11 @@ void QL_Manager::update(const char *relName, const RelAttr &updAttr, const int b
                 memcpy(rec.getData() + updAc->offset,
                         padValue(rhsValue_.data, updAc->attrType, updAc->attrLength), updAc->attrLength);
             } else {
+                memcpy(rhsValue_.data, rec.getData() + rhsAc->offset, rhsAc->attrLength);
+                if (!filterValue(rhsValue_, updAc)) {
+                    delete[] (char *)rhsValue_.data;
+                    return;
+                }
                 memcpy(rec.getData() + updAc->offset, rhsValue_.data, updAc->attrLength);
             }
             ixHandle->insertEntry(rec.getData() + updAc->offset, rids[k]);
@@ -205,6 +210,11 @@ void QL_Manager::update(const char *relName, const RelAttr &updAttr, const int b
             memcpy(rec.getData() + updAc->offset,
                     padValue(rhsValue_.data, updAc->attrType, updAc->attrLength), updAc->attrLength);
         } else {
+            memcpy(rhsValue_.data, rec.getData() + rhsAc->offset, rhsAc->attrLength);
+            if (!filterValue(rhsValue_, updAc)) {
+                delete[] (char *)rhsValue_.data;
+                return;
+            }
             memcpy(rec.getData() + updAc->offset, rhsValue_.data, updAc->attrLength);
         }
         handle->updateRec(rec);
@@ -328,6 +338,32 @@ bool QL_Manager::checkUnique(Value &value, const AttrcatLayout *attrcat, RM_File
     scan.closeScan();
     if (rc == 0) {
         Error::primaryNotUniqueError(attrcat->attrName);
+        return false;
+    }
+    return true;
+}
+
+
+bool QL_Manager::checkReference(Value &value, const AttrcatLayout *attrcat) {
+    if (((attrcat->constrFlag >> 2) & 1) == 0) {
+        return true;
+    }
+    RM_FileHandle *refHandle;
+    Catalog refCat;
+    getCatalog(attrcat->refRelName, refCat);
+    RelAttr ra = {NULL, attrcat->refAttrName};
+    const AttrcatLayout *refAc = locateAttrcat(attrcat->refRelName, refCat, ra);
+    rmm->openFile(getPath(smm->dbName, attrcat->refRelName), refHandle);
+
+    RM_FileScan scan;
+    scan.openScan(*refHandle, refAc->attrType, refAc->attrLength, refAc->offset, EQ_OP, value.data);
+    RC rc;
+    RM_Record rec;
+    rc = scan.getNextRec(rec);
+    scan.closeScan();
+    if (rc == RM_FILESCAN_NONEXT) {
+        Error::referenceError(attrcat->attrName, refAc->relName, refAc->attrName);
+        rmm->closeFile(*refHandle);
         return false;
     }
     return true;

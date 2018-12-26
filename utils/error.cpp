@@ -28,6 +28,18 @@ void Error::primaryNotUniqueError(const char *attrName) {
 }
 
 
+void Error::referenceError(const char *attrName, const char *refRelName, const char *refAttrName) {
+    head();
+    std::cout << "Foreign key \"";
+    print(attrName, VARSTRING, MAXNAME + 1);
+    std::cout << "\" references primary key \"";
+    print(refAttrName, VARSTRING, MAXNAME + 1);
+    std::cout << "\" in table \"";
+    print(refRelName, VARSTRING, MAXNAME + 1);
+    std::cout << "\"." << std::endl;
+}
+
+
 void Error::invalidDateError() {
     head();
     std::cout << "Invalid date." << std::endl;
