@@ -12,7 +12,7 @@ bool isNull(const void *value, int attrLength) {
         // }
     // }
     // return true;
-    return memcmp(value, ((const char *)value) + 1, attrLength - 1) && ((const unsigned char *)value)[0] == NULL_BYTE;
+    return memcmp(value, ((const char *)value) + 1, attrLength - 1) == 0 && ((const unsigned char *)value)[0] == NULL_BYTE;
 }
 
 
@@ -55,11 +55,11 @@ bool validate(const char *pData, AttrType attrType, int attrLength,
         return false;
     }
 
-    if (isNull(value, attrLength)) {
-        return compOp == IS_OP && isNull(pData, attrLength);
+    if (compOp == ISNULL_OP) {
+        return isNull(pData, attrLength);
     }
-    if (compOp == IS_OP) {
-        return false;
+    if (compOp == NOTNULL_OP) {
+        return !isNull(pData, attrLength);
     }
 
     switch (attrType) {
