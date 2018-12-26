@@ -16,6 +16,49 @@ bool isNull(const void *value, int attrLength) {
 }
 
 
+bool checkLike(std::string str, std::string pattern) {
+    int m = str.length(), n = pattern.length();
+    bool *match = new bool[m + 1], *sumMatch = new bool[m + 1];
+    bool *lastMatch = new bool[m + 1], *lastSumMatch = new bool[m + 1];
+    memset(lastMatch, 0, (m + 1) * 4);
+    lastMatch[0] = true;
+    memset(lastSumMatch, -1, (m + 1) * 4);
+    for (int i = 0; i < n; ++i) {
+        if (pattern[i] == '%') {
+            match[0] = lastSumMatch[0];
+        } else {
+            match[0] = false;
+        }
+        sumMatch[0] = match[0];
+
+        for (int j = 0; j < m; ++j) {
+            if (str[j] == pattern[i] || pattern[i] == '_') {
+                match[j + 1] = lastMatch[j];
+            } else if (pattern[i] == '%') {
+                match[j + 1] = lastSumMatch[j + 1];
+            } else {
+                match[j + 1] = false;
+            }
+            sumMatch[j + 1] = sumMatch[j] || match[j + 1];
+        }
+
+        bool *t = match;
+        match = lastMatch;
+        lastMatch = t;
+        t = sumMatch;
+        sumMatch = lastSumMatch;
+        lastSumMatch = t;
+    }
+
+    bool ans = match[m + 1];
+    delete[] match;
+    delete[] sumMatch;
+    delete[] lastMatch;
+    delete[] lastSumMatch;
+    return ans;
+}
+
+
 int cmpDate(const char *val1, const char *val2) {
   unsigned short y1 = *(unsigned short *)val1;
   unsigned char m1 = *(unsigned char *)(val1 + 2);
@@ -115,6 +158,22 @@ bool validate(const char *pData, AttrType attrType, int attrLength,
     }
     if (compOp == NOTNULL_OP) {
         return !isNull(pData, attrLength);
+    }
+
+    if (compOp == LIKE_OP) {
+        if (isNull(pData, attrLength) || isNull(value, attrLength)) {
+            return false;
+        }
+        if (attrType == VARSTRING) {
+            return checkLike(std::string(pData), std::string((char *)value));
+        } else if (attrType == STRING) {
+            std::string str(pData, attrLength), pattern((char *)value, attrLength);
+            str.erase(str.find_last_not_of(" ") + 1);
+            pattern.erase(pattern.find_last_not_of(" ") + 1);
+            return checkLike(str, pattern);
+        } else {
+            return false;
+        }
     }
 
     switch (attrType) {

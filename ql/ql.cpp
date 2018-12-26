@@ -25,7 +25,7 @@ void QL_Manager::insert(const char *relName, int nValues, Value values[]) {
     RM_FileHandle *handle;
     rmm->openFile(getPath(smm->dbName, relName), handle);
     for (int i = 0; i < cat.relcat.attrCount; ++i) {
-        if (!checkUnique(values[i], &(cat.attrcats[i]), handle)) {
+        if (!checkUnique(values[i], &(cat.attrcats[i]), handle) || !checkReference(values[i], &(cat.attrcats[i]))) {
             rmm->closeFile(*handle);
             return;
         }
@@ -171,7 +171,7 @@ void QL_Manager::update(const char *relName, const RelAttr &updAttr, const int b
     Value rhsValue_ = rhsValue;
     if (bIsValue) {
         rhsValue_ = rhsValue;
-        if (!filterValue(rhsValue_, updAc) || !checkUnique(rhsValue, updAc, handle)) {
+        if (!filterValue(rhsValue_, updAc) || !checkUnique(rhsValue, updAc, handle) || !checkReference(rhsValue, updAc)) {
             return;
         }
     } else {
@@ -338,6 +338,32 @@ bool QL_Manager::checkUnique(Value &value, const AttrcatLayout *attrcat, RM_File
     scan.closeScan();
     if (rc == 0) {
         Error::primaryNotUniqueError(attrcat->attrName);
+        return false;
+    }
+    return true;
+}
+
+
+bool QL_Manager::checkReference(Value &value, const AttrcatLayout *attrcat) {
+    if (((attrcat->constrFlag >> 2) & 1) == 0) {
+        return true;
+    }
+    RM_FileHandle *refHandle;
+    Catalog refCat;
+    getCatalog(attrcat->refRelName, refCat);
+    RelAttr ra = {NULL, attrcat->refAttrName};
+    const AttrcatLayout *refAc = locateAttrcat(attrcat->refRelName, refCat, ra);
+    rmm->openFile(getPath(smm->dbName, attrcat->refRelName), refHandle);
+
+    RM_FileScan scan;
+    scan.openScan(*refHandle, refAc->attrType, refAc->attrLength, refAc->offset, EQ_OP, value.data);
+    RC rc;
+    RM_Record rec;
+    rc = scan.getNextRec(rec);
+    scan.closeScan();
+    if (rc == RM_FILESCAN_NONEXT) {
+        Error::referenceError(attrcat->attrName, refAc->relName, refAc->attrName);
+        rmm->closeFile(*refHandle);
         return false;
     }
     return true;
