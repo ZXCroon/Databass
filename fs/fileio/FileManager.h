@@ -1,6 +1,7 @@
 #ifndef FILE_MANAGER
 #define FILE_MANAGER
 #include <cstring>
+#include <vector>
 #include <stdio.h>
 #include <iostream>
 #include <sys/types.h>
@@ -8,6 +9,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <dirent.h>
 #include "../utils/MyLinkList.h"
 #include "../utils/MyBitMap.h"
 #include "../utils/pagedef.h"
@@ -147,6 +149,22 @@ public:
         } else {
             return false;
         }
+    }
+    std::vector<std::string> listDir(const char *name) {
+        DIR *dirp;
+        struct dirent *directory;
+        vector<std::string> res;
+        dirp = opendir(fullName(name));
+        if (dirp) {
+            while ((directory = readdir(dirp)) != NULL) {
+                std::string str(directory->d_name);
+                if (str[0] != '.') {
+                    res.push_back(str);
+                }
+            }
+            closedir(dirp);
+        }
+        return res;
     }
 	int newType() {
 		int t = tm->findLeftOne();

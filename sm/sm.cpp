@@ -80,6 +80,10 @@ bool SM_Manager::showDb(const char *dbName) {
 }
 
 
+void SM_Manager::showDbs() {
+}
+
+
 bool SM_Manager::closeDb() {
     if (relcatHandle == NULL || attrcatHandle == NULL) {
         return false;

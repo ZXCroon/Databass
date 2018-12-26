@@ -91,6 +91,12 @@ void test1() {
     qlm.select(3, ras_, "sel", "class", FULL_JOIN, 0, NULL);
 
     smm.closeDb();
+
+    std::vector<std::string> files = rmm.listDir("test_dbfiles");
+    for (int i = 0; i < files.size(); ++i) {
+        cout << files[i] << " ";
+    }
+    cout << endl;
 }
 
 

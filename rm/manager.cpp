@@ -64,3 +64,8 @@ bool RM_Manager::closeFile(RM_FileHandle &fileHandle) {
     bpm->close();
     return !bpm->fileManager->closeFile(fileHandle.getFileId());
 }
+
+
+std::vector<std::string> RM_Manager::listDir(const char *dirName) {
+    return bpm->fileManager->listDir(dirName);
+}
