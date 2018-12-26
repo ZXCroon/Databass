@@ -164,23 +164,23 @@ void QL_Manager::update(const char *relName, const RelAttr &updAttr, const int b
         fileScan.closeScan();
     }
 
-    const AttrcatLayout *updAc = locateAttrcat(relName, cat, updAttr);
+    const AttrcatLayout *updAc = locateAttrcat(relName, cat, updAttr), *rhsAc;
     if (updAc == NULL) {
         return;
     }
-    Value rhsValue_;
+    Value rhsValue_ = rhsValue;
     if (bIsValue) {
         rhsValue_ = rhsValue;
+        if (!filterValue(rhsValue_, updAc) || !checkUnique(rhsValue, updAc, handle)) {
+            return;
+        }
     } else {
-        const AttrcatLayout *rhsAc = locateAttrcat(relName, cat, rhsRelAttr);
+        rhsAc = locateAttrcat(relName, cat, rhsRelAttr);
         rhsValue_.type = rhsAc->attrType;
         rhsValue_.data = new char[rhsAc->attrLength];
         memcpy(rhsValue_.data, rhsValue.data, rhsAc->attrLength);
     }
-    if (!filterValue(rhsValue_, updAc)) {
-        if (!bIsValue) {
-            delete[] (char *)rhsValue_.data;
-        }
+    if (bIsValue && !filterValue(rhsValue_, updAc)) {
         return;
     }
 
@@ -193,6 +193,11 @@ void QL_Manager::update(const char *relName, const RelAttr &updAttr, const int b
                 memcpy(rec.getData() + updAc->offset,
                         padValue(rhsValue_.data, updAc->attrType, updAc->attrLength), updAc->attrLength);
             } else {
+                memcpy(rhsValue_.data, rec.getData() + rhsAc->offset, rhsAc->attrLength);
+                if (!filterValue(rhsValue_, updAc)) {
+                    delete[] (char *)rhsValue_.data;
+                    return;
+                }
                 memcpy(rec.getData() + updAc->offset, rhsValue_.data, updAc->attrLength);
             }
             ixHandle->insertEntry(rec.getData() + updAc->offset, rids[k]);
@@ -205,6 +210,11 @@ void QL_Manager::update(const char *relName, const RelAttr &updAttr, const int b
             memcpy(rec.getData() + updAc->offset,
                     padValue(rhsValue_.data, updAc->attrType, updAc->attrLength), updAc->attrLength);
         } else {
+            memcpy(rhsValue_.data, rec.getData() + rhsAc->offset, rhsAc->attrLength);
+            if (!filterValue(rhsValue_, updAc)) {
+                delete[] (char *)rhsValue_.data;
+                return;
+            }
             memcpy(rec.getData() + updAc->offset, rhsValue_.data, updAc->attrLength);
         }
         handle->updateRec(rec);
