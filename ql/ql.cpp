@@ -239,7 +239,7 @@ char *QL_Manager::getPath(const char *dbName, const char *relName) {
 
 void *QL_Manager::padValue(void *value, AttrType attrType, int attrLength) {
     if (value == NULL) {
-        memset(valBuf, 0, attrLength);
+        memset(valBuf, NULL_BYTE, attrLength);
         return valBuf;
     }
     if (attrType != STRING) {

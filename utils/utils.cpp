@@ -6,12 +6,13 @@
 
 
 bool isNull(const void *value, int attrLength) {
-    for (int i = 0; i < attrLength; ++i) {
-        if (*((char *)value) != 0) {
-            return false;
-        }
-    }
-    return true;
+    // for (int i = 0; i < attrLength; ++i) {
+        // if (*((char *)value) != NULL_BYTE) {
+            // return false;
+        // }
+    // }
+    // return true;
+    return memcmp(value, ((const char *)value) + 1, attrLength - 1) && ((const unsigned char *)value)[0] == NULL_BYTE;
 }
 
 
@@ -54,9 +55,11 @@ bool validate(const char *pData, AttrType attrType, int attrLength,
         return false;
     }
 
-    // ensure in top levels that IS/== is used correctly
+    if (isNull(value, attrLength)) {
+        return compOp == IS_OP && isNull(pData, attrLength);
+    }
     if (compOp == IS_OP) {
-        compOp = EQ_OP;
+        return false;
     }
 
     switch (attrType) {
@@ -117,6 +120,12 @@ bool validate(const char *pData, AttrType attrType, int attrLength,
 
 
 void print(const void *value, AttrType attrType, int attrLength) {
+    if (isNull(value, attrLength)) {
+        std::cout << "NULL";
+        std::cout.flush();
+        return;
+    }
+
     switch (attrType) {
 
     case INT:
