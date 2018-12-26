@@ -114,11 +114,11 @@ void test2() {
     smm.createDb("trydb2");
     smm.openDb("trydb2");
     
-    AttrInfo attr1 = {"name", STRING, 20, NULL, NULL, false, false, false};
-    AttrInfo attr2 = {"age", INT, 4, NULL, NULL, true, false, false};
-    AttrInfo attr3 = {"id", INT, 4, NULL, NULL, true, true, false};
-    AttrInfo attr4 = {"sex", STRING, 1, NULL, NULL, false, false, false};
-    AttrInfo attr5 = {"date of birth", DATE, 4, NULL, NULL, false, false, false};
+    AttrInfo attr1 = {"name", STRING, 20, {}, {}, false, false, false};
+    AttrInfo attr2 = {"age", INT, 4, {}, {}, true, false, false};
+    AttrInfo attr3 = {"id", INT, 4, {}, {}, true, true, false};
+    AttrInfo attr4 = {"sex", STRING, 1, {}, {}, false, false, false};
+    AttrInfo attr5 = {"date of birth", DATE, 4, {}, {}, false, false, false};
     AttrInfo attrs[] = {attr1, attr2, attr3, attr4, attr5};
     smm.createTable("people", 5, attrs);
 

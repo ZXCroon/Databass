@@ -272,6 +272,14 @@ void *QL_Manager::padValue(void *value, AttrType attrType, int attrLength) {
 
 
 bool QL_Manager::filterValue(Value &value, const AttrcatLayout *attrcat) {
+    if (value.data == NULL) {
+        if ((attrcat->constrFlag & 3) != 0) {
+            Error::nullError(attrcat->attrName);
+            return false;
+        }
+        value.type = attrcat->attrType;
+        return true;
+    }
     if (attrcat->attrType == value.type) {
         return true;
     }
