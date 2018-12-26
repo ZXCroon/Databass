@@ -3,22 +3,33 @@
     #include <cstdlib>
     #include <iostream>
     #include "SemValue.h"
+    #include "OrderPack.h"
+    #include "../fs/bufmanager/BufPageManager.h"
+    #include "../rm/rm.h"
+    #include "../rm/rm_rid.h"
+    #include "../ix/ix.h"
+    #include "../sm/sm.h"
+    #include "../ql/ql.h"
+    #include "../utils/defs.h"
+    #include "../utils/utils.h"
     #define YYSTYPE SemValue
     void yyerror(const char*);
     int yylex(void);
+    extern FILE *yyin;
 %}
 
 %token VALUE_INT VALUE_FLOAT VALUE_STRING
-%token IDENTIFIER OPERATOR
-%token INT CHAR VARCHAR
+%token IDENTIFIER
 %token EXIT
 %token DATABASE DATABASES SHOW CREATE TABLE TABLES DROP USE DESC
 %token PRIMARY KEY NOT NUL IS FOREIGN REFERENCES
 %token INSERT INTO VALUES DELETE
 %token FROM WHERE UPDATE SET SELECT
-%token INT VARCHAR FLOAT DATE
-%token AND
+%token TYPE_INT TYPE_VARCHAR TYPE_FLOAT TYPE_DATE
+%token AND LE GE NE
 %token INDEX
+
+%left AND
 
 %%
 
@@ -37,6 +48,11 @@ SysStmt             :   SHOW DATABASES
                             OrderPack pack(OrderPack::SHOW_DATABASES);
                             pack.process();
 
+                        }
+                    |   EXIT
+                        {
+                            OrderPack pack(OrderPack::EXIT);
+                            pack.process();
                         }
                     ;
 
@@ -58,7 +74,7 @@ DbStmt              :   CREATE DATABASE IDENTIFIER
                             pack.dbname = $2.id;
                             pack.process();
                         }
-                    |   SHOW_TABLES
+                    |   SHOW TABLES
                         {
                             OrderPack pack(OrderPack::SHOW_TABLES);
                             pack.process();
@@ -81,7 +97,7 @@ TbStmt              :   CREATE TABLE IDENTIFIER '(' FieldList ')'
                     |   DESC IDENTIFIER
                         {
                             OrderPack pack(OrderPack::DESC_TABLE);
-                            pack.tbname = $3.id;
+                            pack.tbname = $2.id;
                             pack.process();
                         }
                     |   INSERT INTO IDENTIFIER VALUES ValueLists
@@ -151,7 +167,7 @@ Field               :   IDENTIFIER Type
                     |   IDENTIFIER Type NOT NUL
                         {
                             $$.attrEntry = AttrEntry(AttrEntry::NORMAL, $1.id, $2.attrType, $2.attrLength);
-                            $$.attrEntry.notNULL = NOT_NULL;
+                            $$.attrEntry.notNull = NOT_NULL;
                         }
                     |   PRIMARY KEY '(' IDENTIFIER ')'
                         {
@@ -163,22 +179,22 @@ Field               :   IDENTIFIER Type
                         }
                     ;
 
-Type                :   INT '(' VALUE_INT ')'
+Type                :   TYPE_INT '(' VALUE_INT ')'
                         {
                             $$.attrType = INT;
                             $$.attrLength = 4;
                         }
-                    |   VARCHAR '(' VALUE_INT ')'
+                    |   TYPE_VARCHAR '(' VALUE_INT ')'
                         {
                             $$.attrType = VARSTRING;
                             $$.attrLength = *((int*)($3.value)) + 1;
                         }
-                    |   DATE
+                    |   TYPE_DATE
                         {
                             $$.attrType = DATE;
                             $$.attrLength = 4;
                         }
-                    |   FLOAT
+                    |   TYPE_FLOAT
                         {
                             $$.attrType = FLOAT;
                             $$.attrLength = 4;
@@ -190,7 +206,7 @@ ValueLists          :   '(' ValueList ')'
                             $$.valuesList.clear();
                             $$.valuesList.push_back($2.values);
                         }
-                    |   ValueLists ',' '(', ValueList ')'
+                    |   ValueLists ',' '(' ValueList ')'
                         {
                             $$.valuesList = $1.valuesList;
                             $$.valuesList.push_back($4.values);
@@ -217,6 +233,10 @@ Value               :   VALUE_INT
                         {
                             $$.value = $1.value;
                         }
+                    |   VALUE_FLOAT
+                        {
+                            $$.value = $1.value;
+                        }
                     |   NUL
                         {
                             $$.value = NULL;
@@ -234,7 +254,7 @@ WhereClause         :   Col '=' Expr
                             $$.condEntry.rightValue = $3.value;
                         }
 
-                    |   Col '<>' Expr
+                    |   Col NE Expr
                         {
                             $$.condEntry.calcOp = CondEntry::NOT_EQUAL;
                             $$.condEntry.leftTbname = $1.tbname;
@@ -244,7 +264,7 @@ WhereClause         :   Col '=' Expr
                             $$.condEntry.rightColname = $3.colname;
                             $$.condEntry.rightValue = $3.value;
                         }
-                    |   Col '<=' Expr
+                    |   Col LE Expr
                         {
                             $$.condEntry.calcOp = CondEntry::LESS_EQUAL;
                             $$.condEntry.leftTbname = $1.tbname;
@@ -254,7 +274,7 @@ WhereClause         :   Col '=' Expr
                             $$.condEntry.rightColname = $3.colname;
                             $$.condEntry.rightValue = $3.value;
                         }
-                    |   Col '>=' Expr
+                    |   Col GE Expr
                         {
                             $$.condEntry.calcOp = CondEntry::GREATER_EQUAL;
                             $$.condEntry.leftTbname = $1.tbname;
@@ -301,8 +321,8 @@ WhereClause         :   Col '=' Expr
                     |   WhereClause AND WhereClause
                         {
                             $$.condEntry.calcOp = CondEntry::AND;
-                            $$.condEntry.leftEntry = $1.condEntry;
-                            $$.condEntry.rightEntry = $3.condEntry;
+                            $$.condEntry.leftEntry = &($1.condEntry);
+                            $$.condEntry.rightEntry = &($3.condEntry);
                         }
                     ;
 
@@ -349,12 +369,12 @@ Selector            :   '*'
                             $$.selectList.clear();
                             $$.selectList.selectType = SelectList::ALL;
                         }
-                        Col
+                    |   Col
                         {
                             $$.selectList.clear();
                             $$.selectList.add($1.tbname, $1.colname);
                         }
-                        Selector ',' Col
+                    |   Selector ',' Col
                         {
                             $$.selectList = $1.selectList;
                             $$.selectList.add($3.tbname, $3.colname);
@@ -382,6 +402,13 @@ int main(int argc, char **argv) {
         std::cout << "Usage: main [filename]" << std::endl;
         return -1;
     }
+
+    FileManager fm("test_dbfiles");
+    BufPageManager bpm(&fm);
+    RM_Manager rmm(&bpm);
+    IX_Manager ixm(bpm);
+    SM_Manager smm(&ixm, &rmm);
+    QL_Manager qlm(&smm, &ixm, &rmm);
 
     FILE *pFile = NULL;
     if (argc == 2) {
