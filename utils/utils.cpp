@@ -1,5 +1,6 @@
 #include <cstring>
 #include <iostream>
+#include <sstream>
 #include "utils.h"
 #include "defs.h"
 
@@ -141,5 +142,38 @@ void print(const void *value, AttrType attrType, int attrLength) {
         break;
 
     }
+    std::cout.flush();
+}
+
+
+void printAttrType(AttrType attrType, int attrLength) {
+    std::string str;
+    std::stringstream ss;
+    switch (attrType) {
+
+    case INT:
+        str = "INT";
+        break;
+    case FLOAT:
+        str = "FLOAT";
+        break;
+    case STRING:
+        ss << "CHAR(";
+        ss << attrLength;
+        ss << ")";
+        str = ss.str();
+        break;
+    case VARSTRING:
+        ss << "VARCHAR(";
+        ss << attrLength - 1;
+        ss << ")";
+        str = ss.str();
+        break;
+    case DATE:
+        str = "DATE";
+        break;
+    }
+
+    std::cout << str;
     std::cout.flush();
 }

@@ -36,9 +36,9 @@ void test1() {
     AttrInfo attrs3[2] = {attr6, attr7};
     smm.createTable("sel", 2, attrs3);
 
-    smm.showCurrentDb();
+    smm.showDbs();
     smm.dropTable("student");
-    smm.showCurrentDb();
+    smm.showDb("trydb");
 
     smm.createTable("student", 2, attrs);
 
@@ -90,13 +90,9 @@ void test1() {
     RelAttr ras_[] = {ra1, ra2, ra3};
     qlm.select(3, ras_, "sel", "class", FULL_JOIN, 0, NULL);
 
+    smm.showTables();
     smm.closeDb();
-
-    std::vector<std::string> files = rmm.listDir("test_dbfiles");
-    for (int i = 0; i < files.size(); ++i) {
-        cout << files[i] << " ";
-    }
-    cout << endl;
+    smm.showDbs();
 }
 
 

@@ -12,6 +12,7 @@ bool validate(const char *pData, AttrType attrType, int attrLength, CompOp compO
 
 
 void print(const void *value, AttrType attrType, int attrLength);
+void printAttrType(AttrType attrType, int attrLength);
 
 
 typedef unsigned long long ULL;
