@@ -1,5 +1,6 @@
 #include <cstring>
 #include <vector>
+#include <algorithm>
 #include "ql.h"
 
 
@@ -226,6 +227,11 @@ void QL_Manager::update(const char *relName, const RelAttr &updAttr, const int b
 }
 
 
+bool cmp(AttrcatLayout ac1, AttrcatLayout ac2) {
+    return ac1.offset < ac2.offset;
+}
+
+
 bool QL_Manager::getCatalog(const char *relName, Catalog &cat) {
     RID rid;
     if (!smm->getRelcatRid(relName, rid)) {
@@ -245,6 +251,7 @@ bool QL_Manager::getCatalog(const char *relName, Catalog &cat) {
         smm->getAttrcatFromRid(rids[i], cat.attrcats[i]);
     }
 
+    sort(cat.attrcats, cat.attrcats + attrCount, cmp);
     return true;
 }
 
