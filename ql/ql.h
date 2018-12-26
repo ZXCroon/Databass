@@ -78,6 +78,7 @@ private:
                       int nConditions, const Condition *conditions,
                       const RM_Record &rec1, const RM_Record &rec2);
     bool filterValue(Value &value, const AttrcatLayout *attrcat);
+    bool checkUnique(Value &value, const AttrcatLayout *attrcat, RM_FileHandle *handle);
 
     SM_Manager *smm;
     IX_Manager *ixm;

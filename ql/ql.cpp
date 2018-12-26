@@ -24,6 +24,13 @@ void QL_Manager::insert(const char *relName, int nValues, Value values[]) {
 
     RM_FileHandle *handle;
     rmm->openFile(getPath(smm->dbName, relName), handle);
+    for (int i = 0; i < cat.relcat.attrCount; ++i) {
+        if (!checkUnique(values[i], &(cat.attrcats[i]), handle)) {
+            rmm->closeFile(*handle);
+            return;
+        }
+    }
+
     char *data = new char[cat.relcat.tupleLength];
     for (int i = 0; i < cat.relcat.attrCount; ++i) {
         memcpy(data + cat.attrcats[i].offset, padValue(values[i].data, values[i].type, cat.attrcats[i].attrLength),
@@ -306,4 +313,22 @@ bool QL_Manager::filterValue(Value &value, const AttrcatLayout *attrcat) {
     }
     Error::typeError(attrcat->attrType, value.type);
     return false;
+}
+
+
+bool QL_Manager::checkUnique(Value &value, const AttrcatLayout *attrcat, RM_FileHandle *handle) {
+    if (value.data == NULL || ((attrcat->constrFlag >> 1) & 1) == 0) {
+        return true;
+    }
+    RM_FileScan scan;
+    scan.openScan(*handle, attrcat->attrType, attrcat->attrLength, attrcat->offset, EQ_OP, value.data);
+    RC rc;
+    RM_Record rec;
+    rc = scan.getNextRec(rec);
+    scan.closeScan();
+    if (rc == 0) {
+        Error::primaryNotUniqueError(attrcat->attrName);
+        return false;
+    }
+    return true;
 }
