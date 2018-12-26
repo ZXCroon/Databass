@@ -11,9 +11,7 @@ struct AttrInfo {
     AttrType attrType;
     int attrLength;
     char refTbname[MAXNAME + 1], refColname[MAXNAME + 1];
-    NotNull notNull;
-    IsPrimary isPrimary;
-    IsForeign isForeign;
+    bool notNull, isPrimary, isForeign;
 };
 
 
@@ -38,10 +36,13 @@ struct RelcatLayout {
 struct AttrcatLayout {
     char relName[MAXNAME + 1];
     char attrName[MAXNAME + 1];
+    char refRelName[MAXNAME + 1];
+    char refAttrName[MAXNAME + 1];
     int offset;
     AttrType attrType;
     int attrLength;
     int indexNo;
+    int constrFlag;  // bit 0: notNull; bit 1: isPrimary; bit 2: isForeign
 };
 
 

@@ -137,6 +137,19 @@ bool SM_Manager::createTable(const char *relName, int attrCount, AttrInfo *attri
         attrcat.attrLength = attr->attrLength;
         attrcat.indexNo = -1;
 
+        attrcat.constrFlag = 0;
+        if (attr->notNull) {
+            attrcat.constrFlag |= 1;
+        }
+        if (attr->isPrimary) {
+            attrcat.constrFlag |= 2;
+        }
+        if (attr->isForeign) {
+            attrcat.constrFlag |= 4;
+            strcpy(attrcat.refRelName, attr->refTbname);
+            strcpy(attrcat.refAttrName, attr->refColname);
+        }
+
         RID rid;
         attrcatHandle->insertRec((char *)(&attrcat), rid);
 

@@ -7,7 +7,7 @@ const int ALL_PAGES = -1;
 const int NO_PAGE = -2;
 typedef int SlotNum;
 typedef unsigned long long Bits;
-const unsigned char NULL_BYTE = 98;
+const unsigned char NULL_BYTE = 234;
 
 
 //
@@ -47,30 +47,6 @@ const int INNER_JOIN = 1;
 const int LEFT_JOIN = 2;
 const int RIGHT_JOIN = 3;
 const int FULL_JOIN = 4;
-
-
-// 
-// NOT NULL
-// 
-typedef int NotNull;
-const int CAN_BE_NULL = 0;
-const int NOT_NULL = 1;
-
-
-// 
-// IS PRIMARY
-// 
-typedef int IsPrimary;
-const int NOT_PRIMARY = 0;
-const int IS_PRIMARY = 1;
-
-
-// 
-// IS FOREIGN
-// 
-typedef int IsForeign;
-const int NOT_FOREIGN = 0;
-const int IS_FOREIGN = 1;
 
 
 //
