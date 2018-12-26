@@ -58,10 +58,10 @@ public:
     RC select(int nSelAttrs, const RelAttr selAttrs[],
               const char* relation1, const char *relation2, JoinType joinType,
               int nConditions, const Condition conditions[]);
-    void insert(const char *relName, int nValues, const Value values[]);
+    void insert(const char *relName, int nValues, Value values[]);
     void del(const char *relName, int nConditions, const Condition conditions[]);
     void update(const char *relName, const RelAttr &updAttr, const int bIsValue,
-                const RelAttr &rhsRelAttr, const Value &rhsValue,
+                const RelAttr &rhsRelAttr, Value &rhsValue,
                 int nConditions, const Condition conditions[]);
 
 private:
@@ -77,6 +77,8 @@ private:
                       const Catalog &cat1, const Catalog &cat2,
                       int nConditions, const Condition *conditions,
                       const RM_Record &rec1, const RM_Record &rec2);
+    bool filterValue(Value &value, const AttrcatLayout *attrcat);
+    bool checkUnique(Value &value, const AttrcatLayout *attrcat, RM_FileHandle *handle);
 
     SM_Manager *smm;
     IX_Manager *ixm;

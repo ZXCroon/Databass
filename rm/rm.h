@@ -85,6 +85,7 @@ public:
     bool deleteDir(const char *dirName);
     bool openFile(const char *fileName, RM_FileHandle *&fileHandle);
     bool closeFile(RM_FileHandle &fileHandle);
+    std::vector<std::string> listDir(const char *dirName);
 
 private:
     BufPageManager *bpm;
