@@ -106,7 +106,10 @@ NEWLINE (\r|\n|\r\n)
 {IDENTIFIER}                            {
                                             yylval = SemValue();
                                             yylval.code = IDENTIFIER;
-                                            yylval.id = yytext;
+                                            int len = strlen(yytext);
+                                            yylval.id = new char[len + 1];
+                                            memcpy(yylval.id, yytext, len);
+                                            yylval.id[len] = '\0';
                                             return IDENTIFIER;
                                         }
 

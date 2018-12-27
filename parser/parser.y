@@ -19,6 +19,12 @@
     int yylex(void);
     extern FILE *yyin;
     extern int yyparse();
+    FileManager fm("test_dbfiles");
+    BufPageManager bpm(&fm);
+    RM_Manager rmm(&bpm);
+    IX_Manager ixm(bpm);
+    SM_Manager smm(&ixm, &rmm);
+    QL_Manager qlm(&smm, &ixm, &rmm);
 %}
 
 %token VALUE_INT VALUE_FLOAT VALUE_STRING
@@ -40,47 +46,47 @@ Program             :   Program Stmt
                     |   %empty
                     ;
 
-Stmt                :   SysStmt ';'
-                    |   DbStmt ';'
-                    |   TbStmt ';'
-                    |   IdxStmt ';'
+Stmt                :   SysStmt
+                    |   DbStmt
+                    |   TbStmt
+                    |   IdxStmt
                     ;
 
-SysStmt             :   SHOW DATABASES
+SysStmt             :   SHOW DATABASES ';'
                         {
                             OrderPack pack(OrderPack::SHOW_DATABASES);
                             pack.process();
                             prompt();
                         }
-                    |   EXIT
+                    |   EXIT ';'
                         {
                             OrderPack pack(OrderPack::EXIT);
                             pack.process();
                         }
                     ;
 
-DbStmt              :   CREATE DATABASE IDENTIFIER
+DbStmt              :   CREATE DATABASE IDENTIFIER ';'
                         {
                             OrderPack pack(OrderPack::CREATE_DATABASE);
                             pack.dbname = $3.id;
                             pack.process();
                             prompt();
                         }
-                    |   DROP DATABASE IDENTIFIER
+                    |   DROP DATABASE IDENTIFIER ';'
                         {
                             OrderPack pack(OrderPack::DROP_DATABASE);
                             pack.dbname = $3.id;
                             pack.process();
                             prompt();
                         }
-                    |   USE IDENTIFIER
+                    |   USE IDENTIFIER ';'
                         {
                             OrderPack pack(OrderPack::USE_DATABASE);
                             pack.dbname = $2.id;
                             pack.process();
                             prompt();
                         }
-                    |   SHOW TABLES
+                    |   SHOW TABLES ';'
                         {
                             OrderPack pack(OrderPack::SHOW_TABLES);
                             pack.process();
@@ -88,7 +94,7 @@ DbStmt              :   CREATE DATABASE IDENTIFIER
                         }
                     ;
 
-TbStmt              :   CREATE TABLE IDENTIFIER '(' FieldList ')'
+TbStmt              :   CREATE TABLE IDENTIFIER '(' FieldList ')' ';'
                         {
                             OrderPack pack(OrderPack::CREATE_TABLE);
                             pack.tbname = $3.id;
@@ -96,21 +102,21 @@ TbStmt              :   CREATE TABLE IDENTIFIER '(' FieldList ')'
                             pack.process();
                             prompt();
                         }
-                    |   DROP TABLE IDENTIFIER
+                    |   DROP TABLE IDENTIFIER ';'
                         {
                             OrderPack pack(OrderPack::DROP_TABLE);
                             pack.tbname = $3.id;
                             pack.process();
                             prompt();
                         }
-                    |   DESC IDENTIFIER
+                    |   DESC IDENTIFIER ';'
                         {
                             OrderPack pack(OrderPack::DESC_TABLE);
                             pack.tbname = $2.id;
                             pack.process();
                             prompt();
                         }
-                    |   INSERT INTO IDENTIFIER VALUES ValueLists
+                    |   INSERT INTO IDENTIFIER VALUES ValueLists ';'
                         {
                             OrderPack pack(OrderPack::INSERT_VALUES);
                             pack.tbname = $3.id;
@@ -118,7 +124,7 @@ TbStmt              :   CREATE TABLE IDENTIFIER '(' FieldList ')'
                             pack.process();
                             prompt();
                         }
-                    |   DELETE FROM IDENTIFIER WHERE WhereClause
+                    |   DELETE FROM IDENTIFIER WHERE WhereClause ';'
                         {
                             OrderPack pack(OrderPack::DELETE_VALUES);
                             pack.tbname = $3.id;
@@ -126,7 +132,7 @@ TbStmt              :   CREATE TABLE IDENTIFIER '(' FieldList ')'
                             pack.process();
                             prompt();
                         }
-                    |   UPDATE IDENTIFIER SET SetClause WHERE WhereClause
+                    |   UPDATE IDENTIFIER SET SetClause WHERE WhereClause ';'
                         {
                             OrderPack pack(OrderPack::UPDATE_VALUES);
                             pack.tbname = $2.id;
@@ -135,7 +141,7 @@ TbStmt              :   CREATE TABLE IDENTIFIER '(' FieldList ')'
                             pack.process();
                             prompt();
                         }
-                    |   SELECT Selector FROM TableList WHERE WhereClause
+                    |   SELECT Selector FROM TableList WHERE WhereClause ';'
                         {
                             OrderPack pack(OrderPack::SELECT_VALUES);
                             pack.selectList = $2.selectList;
@@ -146,7 +152,7 @@ TbStmt              :   CREATE TABLE IDENTIFIER '(' FieldList ')'
                         }
                     ;
 
-IdxStmt             :   CREATE INDEX IDENTIFIER  '(' IDENTIFIER ')'
+IdxStmt             :   CREATE INDEX IDENTIFIER  '(' IDENTIFIER ')' ';'
                         {
                             OrderPack pack(OrderPack::CREATE_INDEX);
                             pack.tbname = $3.id;
@@ -154,7 +160,7 @@ IdxStmt             :   CREATE INDEX IDENTIFIER  '(' IDENTIFIER ')'
                             pack.process();
                             prompt();
                         }
-                    |   DROP INDEX IDENTIFIER '(' IDENTIFIER ')'
+                    |   DROP INDEX IDENTIFIER '(' IDENTIFIER ')' ';'
                         {
                             OrderPack pack(OrderPack::DROP_INDEX);
                             pack.tbname = $3.id;
@@ -183,7 +189,7 @@ Field               :   IDENTIFIER Type
                     |   IDENTIFIER Type NOT NUL
                         {
                             $$.attrEntry = AttrEntry(AttrEntry::NORMAL, $1.id, $2.attrType, $2.attrLength);
-                            $$.attrEntry.notNull = NOT_NULL;
+                            $$.attrEntry.notNull = true;
                         }
                     |   PRIMARY KEY '(' IDENTIFIER ')'
                         {
@@ -424,13 +430,6 @@ int main(int argc, char **argv) {
         std::cout << "Usage: main [filename]" << std::endl;
         return -1;
     }
-
-    FileManager fm("test_dbfiles");
-    BufPageManager bpm(&fm);
-    RM_Manager rmm(&bpm);
-    IX_Manager ixm(bpm);
-    SM_Manager smm(&ixm, &rmm);
-    QL_Manager qlm(&smm, &ixm, &rmm);
 
     FILE *pFile = NULL;
     if (argc == 2) {

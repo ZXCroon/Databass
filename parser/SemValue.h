@@ -16,9 +16,9 @@ public:
         FOREIGN
     };
     AttrEntry() {
-        notNull = CAN_BE_NULL;
-        isPrimary = NOT_PRIMARY;
-        isForeign = NOT_FOREIGN;
+        notNull = false;
+        isPrimary = false;
+        isForeign = false;
     }
     AttrEntry(FieldType fieldType, char *id) : fieldType(fieldType), id(id) { }
     AttrEntry(FieldType fieldType, char *id, char *tbname, char *colname) : id(id) {
@@ -26,17 +26,15 @@ public:
         refColname = colname;
     }
     AttrEntry(FieldType fieldType, char *id, AttrType attrType, int attrLength) : fieldType(fieldType), id(id), attrType(attrType), attrLength(attrLength) {
-        notNull = CAN_BE_NULL;
-        isPrimary = NOT_PRIMARY;
-        isForeign = NOT_FOREIGN;
+        notNull = false;
+        isPrimary = false;
+        isForeign = false;
     }
     char *id, *refTbname, *refColname;
     FieldType fieldType;
     AttrType attrType;
     int attrLength;
-    NotNull notNull;
-    IsPrimary isPrimary;
-    IsForeign isForeign;
+    bool notNull, isPrimary, isForeign;
 };
 
 
@@ -54,7 +52,7 @@ public:
         case AttrEntry::PRIMARY: {
             for (int i = 0; i < attrList.size(); ++i)
             if (strcmp(attrList[i].id, attrEntry.id) == 0) {
-                attrList[i].isPrimary = IS_PRIMARY;
+                attrList[i].isPrimary = true;
             }
             break;
         }
@@ -62,7 +60,7 @@ public:
         case AttrEntry::FOREIGN: {
             for (int i = 0; i < attrList.size(); ++i)
             if (strcmp(attrList[i].id, attrEntry.id) == 0) {
-                attrList[i].isForeign = IS_FOREIGN;
+                attrList[i].isForeign = true;
                 attrList[i].refTbname = attrEntry.refTbname;
                 attrList[i].refColname = attrEntry.refColname;
             }

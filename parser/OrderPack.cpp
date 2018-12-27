@@ -4,23 +4,24 @@ void OrderPack::process() {
     switch (type) {
 
     case SHOW_DATABASES: {
-        // todo
-        printf("SHOW_DATABASES!\n");
+        smm.showDbs();
         break;
     }
 
     case CREATE_DATABASE: {
-        // smm.createDb(dbname);
+        printf("DEBUG: CREATE %s\n", dbname);
+        smm.createDb(dbname);
         break;
     }
 
     case DROP_DATABASE: {
-        // smm.dropDb(dbname);
+        printf("DEBUG: DROP %s\n", dbname);
+        smm.dropDb(dbname);
         break;
     }
 
     case USE_DATABASE: {
-        // smm.openDb(dbname);
+        smm.openDb(dbname);
         break;
     }
 
