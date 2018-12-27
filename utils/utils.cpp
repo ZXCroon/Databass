@@ -20,9 +20,9 @@ bool checkLike(std::string str, std::string pattern) {
     int m = str.length(), n = pattern.length();
     bool *match = new bool[m + 1], *sumMatch = new bool[m + 1];
     bool *lastMatch = new bool[m + 1], *lastSumMatch = new bool[m + 1];
-    memset(lastMatch, 0, (m + 1) * 4);
+    memset(lastMatch, 0, m + 1);
     lastMatch[0] = true;
-    memset(lastSumMatch, -1, (m + 1) * 4);
+    memset(lastSumMatch, -1, m + 1);
     for (int i = 0; i < n; ++i) {
         if (pattern[i] == '%') {
             match[0] = lastSumMatch[0];
@@ -50,7 +50,7 @@ bool checkLike(std::string str, std::string pattern) {
         lastSumMatch = t;
     }
 
-    bool ans = match[m + 1];
+    bool ans = lastMatch[m];
     delete[] match;
     delete[] sumMatch;
     delete[] lastMatch;
@@ -170,7 +170,9 @@ bool validate(const char *pData, AttrType attrType, int attrLength,
             std::string str(pData, attrLength), pattern((char *)value, attrLength);
             str.erase(str.find_last_not_of(" ") + 1);
             pattern.erase(pattern.find_last_not_of(" ") + 1);
-            return checkLike(str, pattern);
+            bool t = checkLike(str, pattern);
+            return t;
+            // return checkLike(str, pattern);
         } else {
             return false;
         }

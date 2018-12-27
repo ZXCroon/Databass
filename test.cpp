@@ -223,8 +223,14 @@ void test2() {
         RelAttr ra2 = {"people", "name"};
         RelAttr ra3 = {"people", "age"};
         RelAttr ra4 = {"people", "date of birth"};
+        RelAttr cra = {NULL, "name"};
         RelAttr ras[] = {ra1, ra2, ra3, ra4};
-        qlm.select(4, ras, "people", NULL, NO_JOIN, 0, NULL);
+        // char pattern[] = "_Wa\%ng ";
+        char pattern[] = "\%Wa_g ";
+        Value cv = {STRING, pattern};
+        Condition cond = {cra, LIKE_OP, false, cra, cv};
+        Condition conds[] = {cond};
+        qlm.select(4, ras, "people", NULL, NO_JOIN, 1, conds);
     }
 
     smm.closeDb();
