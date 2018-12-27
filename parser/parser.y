@@ -14,8 +14,17 @@
     #include "../utils/utils.h"
     #define YYSTYPE SemValue
     void yyerror(const char*);
+    void prompt();
+    bool isCmd = true;
     int yylex(void);
     extern FILE *yyin;
+    extern int yyparse();
+    FileManager fm("test_dbfiles");
+    BufPageManager bpm(&fm);
+    RM_Manager rmm(&bpm);
+    IX_Manager ixm(bpm);
+    SM_Manager smm(&ixm, &rmm);
+    QL_Manager qlm(&smm, &ixm, &rmm);
 %}
 
 %token VALUE_INT VALUE_FLOAT VALUE_STRING
@@ -37,114 +46,127 @@ Program             :   Program Stmt
                     |   %empty
                     ;
 
-Stmt                :   SysStmt ';'
-                    |   DbStmt ';'
-                    |   TbStmt ';'
-                    |   IdxStmt ';'
+Stmt                :   SysStmt
+                    |   DbStmt
+                    |   TbStmt
+                    |   IdxStmt
                     ;
 
-SysStmt             :   SHOW DATABASES
+SysStmt             :   SHOW DATABASES ';'
                         {
                             OrderPack pack(OrderPack::SHOW_DATABASES);
                             pack.process();
-
+                            prompt();
                         }
-                    |   EXIT
+                    |   EXIT ';'
                         {
                             OrderPack pack(OrderPack::EXIT);
                             pack.process();
                         }
                     ;
 
-DbStmt              :   CREATE DATABASE IDENTIFIER
+DbStmt              :   CREATE DATABASE IDENTIFIER ';'
                         {
                             OrderPack pack(OrderPack::CREATE_DATABASE);
                             pack.dbname = $3.id;
                             pack.process();
+                            prompt();
                         }
-                    |   DROP DATABASE IDENTIFIER
+                    |   DROP DATABASE IDENTIFIER ';'
                         {
                             OrderPack pack(OrderPack::DROP_DATABASE);
                             pack.dbname = $3.id;
                             pack.process();
+                            prompt();
                         }
-                    |   USE IDENTIFIER
+                    |   USE IDENTIFIER ';'
                         {
                             OrderPack pack(OrderPack::USE_DATABASE);
                             pack.dbname = $2.id;
                             pack.process();
+                            prompt();
                         }
-                    |   SHOW TABLES
+                    |   SHOW TABLES ';'
                         {
                             OrderPack pack(OrderPack::SHOW_TABLES);
                             pack.process();
+                            prompt();
                         }
                     ;
 
-TbStmt              :   CREATE TABLE IDENTIFIER '(' FieldList ')'
+TbStmt              :   CREATE TABLE IDENTIFIER '(' FieldList ')' ';'
                         {
                             OrderPack pack(OrderPack::CREATE_TABLE);
                             pack.tbname = $3.id;
                             pack.attrList = $5.attrList;
                             pack.process();
+                            prompt();
                         }
-                    |   DROP TABLE IDENTIFIER
+                    |   DROP TABLE IDENTIFIER ';'
                         {
                             OrderPack pack(OrderPack::DROP_TABLE);
                             pack.tbname = $3.id;
                             pack.process();
+                            prompt();
                         }
-                    |   DESC IDENTIFIER
+                    |   DESC IDENTIFIER ';'
                         {
                             OrderPack pack(OrderPack::DESC_TABLE);
                             pack.tbname = $2.id;
                             pack.process();
+                            prompt();
                         }
-                    |   INSERT INTO IDENTIFIER VALUES ValueLists
+                    |   INSERT INTO IDENTIFIER VALUES ValueLists ';'
                         {
                             OrderPack pack(OrderPack::INSERT_VALUES);
                             pack.tbname = $3.id;
                             pack.valuesList = $5.valuesList;
                             pack.process();
+                            prompt();
                         }
-                    |   DELETE FROM IDENTIFIER WHERE WhereClause
+                    |   DELETE FROM IDENTIFIER WHERE WhereClause ';'
                         {
                             OrderPack pack(OrderPack::DELETE_VALUES);
                             pack.tbname = $3.id;
                             pack.condEntry = $5.condEntry;
                             pack.process();
+                            prompt();
                         }
-                    |   UPDATE IDENTIFIER SET SetClause WHERE WhereClause
+                    |   UPDATE IDENTIFIER SET SetClause WHERE WhereClause ';'
                         {
                             OrderPack pack(OrderPack::UPDATE_VALUES);
                             pack.tbname = $2.id;
                             pack.setList = $4.setList;
                             pack.condEntry = $6.condEntry;
                             pack.process();
+                            prompt();
                         }
-                    |   SELECT Selector FROM TableList WHERE WhereClause
+                    |   SELECT Selector FROM TableList WHERE WhereClause ';'
                         {
                             OrderPack pack(OrderPack::SELECT_VALUES);
                             pack.selectList = $2.selectList;
                             pack.tableList = $4.tableList;
                             pack.condEntry = $6.condEntry;
                             pack.process();
+                            prompt();
                         }
                     ;
 
-IdxStmt             :   CREATE INDEX IDENTIFIER  '(' IDENTIFIER ')'
+IdxStmt             :   CREATE INDEX IDENTIFIER  '(' IDENTIFIER ')' ';'
                         {
                             OrderPack pack(OrderPack::CREATE_INDEX);
                             pack.tbname = $3.id;
                             pack.colname = $5.id;
                             pack.process();
+                            prompt();
                         }
-                    |   DROP INDEX IDENTIFIER '(' IDENTIFIER ')'
+                    |   DROP INDEX IDENTIFIER '(' IDENTIFIER ')' ';'
                         {
                             OrderPack pack(OrderPack::DROP_INDEX);
                             pack.tbname = $3.id;
                             pack.colname = $5.id;
                             pack.process();
+                            prompt();
                         }
                     ;
 
@@ -167,7 +189,7 @@ Field               :   IDENTIFIER Type
                     |   IDENTIFIER Type NOT NUL
                         {
                             $$.attrEntry = AttrEntry(AttrEntry::NORMAL, $1.id, $2.attrType, $2.attrLength);
-                            $$.attrEntry.notNull = NOT_NULL;
+                            $$.attrEntry.notNull = true;
                         }
                     |   PRIMARY KEY '(' IDENTIFIER ')'
                         {
@@ -395,6 +417,12 @@ TableList           :   IDENTIFIER
 
 %%
 
+void prompt() {
+    if (isCmd) {
+        printf("Databass>\n");
+    }
+}
+
 void yyerror(const char *s) {}
 
 int main(int argc, char **argv) {
@@ -403,13 +431,6 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    FileManager fm("test_dbfiles");
-    BufPageManager bpm(&fm);
-    RM_Manager rmm(&bpm);
-    IX_Manager ixm(bpm);
-    SM_Manager smm(&ixm, &rmm);
-    QL_Manager qlm(&smm, &ixm, &rmm);
-
     FILE *pFile = NULL;
     if (argc == 2) {
         pFile = fopen(argv[1], "r");
@@ -417,11 +438,13 @@ int main(int argc, char **argv) {
             std::cout << "Input File not Exist!" << std::endl;
             return -1;
         }
+        isCmd = false;
         yyin = pFile;
         yyparse();
     }
-    if (argc == 1) {
-        yyparse();
-    }
+    isCmd = true;
+    prompt();
+    yyparse();
+
     return 0;
 }

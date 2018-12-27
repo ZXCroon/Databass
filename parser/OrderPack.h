@@ -2,6 +2,8 @@
 #define ORDERPACK_H
 
 #include "SemValue.h"
+#include "unistd.h"
+#include "cstdlib"
 
 extern RM_Manager rmm;
 extern IX_Manager ixm;
