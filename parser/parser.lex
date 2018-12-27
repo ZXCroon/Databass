@@ -3,7 +3,7 @@
 #include <cstdlib>
 #include "SemValue.h"
 #define YYSTYPE SemValue
-#include "Parser.tab.h"
+#include "parser.tab.h"
 void yyerror(const char*);
 %}
 DIGIT ([0-9])
@@ -13,7 +13,10 @@ VALUE_STRING ('[^']*')
 
 IDENTIFIER ([A-Za-z][_0-9A-Za-z]*)
 EXIT ("EXIT"|"exit")
-OPERATOR ("<="|">="|"<>"|"<"|">"|"="|","|"."|";"|"*"|"("|")")
+LE ("<=")
+GE (">=")
+NE ("<>")
+OPERATOR ("<"|">"|"="|","|"."|";"|"*"|"("|")")
 
 DATABASE ("database"|"DATABASE")
 DATABASES ("databases"|"DATABASES")
@@ -37,21 +40,15 @@ UPDATE ("update"|"UPDATE")
 SET ("set"|"SET")
 SELECT ("select"|"SELECT")
 IS ("is"|"IS")
-INT ("int"|"INT")
-VARCHAR ("varchar"|"VARCHAR")
+TYPE_INT ("int"|"INT")
+TYPE_VARCHAR ("varchar"|"VARCHAR")
 DESC ("desc"|"DESC")
 REFERENCES ("references"|"REFERENCES")
 INDEX ("index"|"INDEX")
 AND ("and"|"AND")
-DATE ("date"|"DATE")
-FLOAT ("float"|"FLOAT")
+TYPE_DATE ("date"|"DATE")
+TYPE_FLOAT ("float"|"FLOAT")
 FOREIGN ("foreign"|"FOREIGN")
-
-IS ("is"|"IS")
-
-INT ("INT"|"int")
-CHAR ("CHAR"|"char")
-VARCHAR ("VARCHAR"|"varchar")
 
 WHITESPACE ([ \t]+)
 NEWLINE (\r|\n|\r\n)
@@ -88,22 +85,19 @@ NEWLINE (\r|\n|\r\n)
 {SET}                                   { return SemValue::keyword(SET); }
 {SELECT}                                { return SemValue::keyword(SELECT); }
 {IS}                                    { return SemValue::keyword(IS); }
-{INT}                                   { return SemValue::keyword(INT); }
-{VARCHAR}                               { return SemValue::keyword(VARCHAR); }
+{TYPE_INT}                              { return SemValue::keyword(TYPE_INT); }
+{TYPE_VARCHAR}                          { return SemValue::keyword(TYPE_VARCHAR); }
 {DESC}                                  { return SemValue::keyword(DESC); }
 {REFERENCES}                            { return SemValue::keyword(REFERENCES); }
 {INDEX}                                 { return SemValue::keyword(INDEX); }
 {AND}                                   { return SemValue::keyword(AND); }
-{DATE}                                  { return SemValue::keyword(DATE); }
-{FLOAT}                                 { return SemValue::keyword(FLOAT); }
+{TYPE_DATE}                             { return SemValue::keyword(TYPE_DATE); }
+{TYPE_FLOAT}                            { return SemValue::keyword(TYPE_FLOAT); }
 {FOREIGN}                               { return SemValue::keyword(FOREIGN); }
 
-{IS}                                    { return SemValue::keyword(IS); }
-
-{INT}                                   { return SemValue::keyword(INT); }
-{CHAR}                                  { return SemValue::keyword(CHAR); }
-{VARCHAR}                               { return SemValue::keyword(VARCHAR); }
-
+{LE}                                    { return SemValue::keyword(LE); }
+{GE}                                    { return SemValue::keyword(GE); }
+{NE}                                    { return SemValue::keyword(NE); }
 {OPERATOR}                              { return *yytext; }
 
 {IDENTIFIER}                            {

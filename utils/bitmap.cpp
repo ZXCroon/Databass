@@ -1,6 +1,7 @@
 #include "utils.h"
 #include <string>
 #include <iostream>
+#include <cstring>
 
 
 template <typename T>

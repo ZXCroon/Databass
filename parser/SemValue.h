@@ -72,6 +72,10 @@ public:
         }
     }
 
+    void clear() {
+        attrList.clear();
+    }
+
     std::vector<AttrEntry> attrList;
 };
 
@@ -83,7 +87,7 @@ public:
         EQUAL,
         NOT_EQUAL,
         LESS_EQUAL,
-        GREATR_EQUAL,
+        GREATER_EQUAL,
         LESS,
         GREATER,
         IS_NULL,
@@ -97,11 +101,11 @@ public:
         rightColname = NULL;
         leftValue = NULL;
         rightValue = NULL;
-    }
+    };
     CalcOp calcOp;
     char *leftTbname, *leftColname, *rightTbname, *rightColname;
     void *leftValue, *rightValue;
-    CondEntry leftEntry, rightEntry;
+    CondEntry *leftEntry, *rightEntry;
 };
 
 
@@ -157,7 +161,7 @@ public:
     AttrEntry attrEntry;
     AttrList attrList;
     std::vector<void*> values;
-    std::vector<std::vector<void*>> valuesList;
+    std::vector<std::vector<void*> > valuesList;
     CondEntry condEntry;
     SetList setList;
     SelectList selectList;
