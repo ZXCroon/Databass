@@ -34,7 +34,7 @@
 %token PRIMARY KEY NOT NUL IS FOREIGN REFERENCES
 %token INSERT INTO VALUES DELETE
 %token FROM WHERE UPDATE SET SELECT
-%token TYPE_INT TYPE_VARCHAR TYPE_FLOAT TYPE_DATE
+%token TYPE_INT TYPE_VARCHAR TYPE_FLOAT TYPE_DATE TYPE_CHAR
 %token AND LE GE NE
 %token INDEX
 
@@ -210,6 +210,11 @@ Type                :   TYPE_INT '(' VALUE_INT ')'
                         {
                             $$.attrType = VARSTRING;
                             $$.attrLength = *((int*)($3.value)) + 1;
+                        }
+                    |   TYPE_CHAR '(' VALUE_INT ')'
+                        {
+                            $$.attrType = STRING;
+                            $$.attrLength = *((int*)($3.value));
                         }
                     |   TYPE_DATE
                         {
