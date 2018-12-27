@@ -2,16 +2,15 @@
 #define UTILS_H
 
 #include "defs.h"
+#include "error.h"
 
 
 bool isNull(const void *value, int attrLength);
-
 int cmpDate(const char *val1, const char *val2);
-
+bool convertToDate(char *value);
 bool validate(const char *pData, AttrType attrType, int attrLength, CompOp compOp, const void *value);
-
-
 void print(const void *value, AttrType attrType, int attrLength);
+void printAttrType(AttrType attrType, int attrLength = -1);
 
 
 typedef unsigned long long ULL;

@@ -1,5 +1,6 @@
 #include <cstring>
 #include <vector>
+#include <algorithm>
 #include "ql.h"
 
 
@@ -10,15 +11,27 @@ QL_Manager::QL_Manager(SM_Manager *smm, IX_Manager *ixm, RM_Manager *rmm) :
 QL_Manager::~QL_Manager() {}
 
 
-void QL_Manager::insert(const char *relName, int nValues, const Value values[]) {
+void QL_Manager::insert(const char *relName, int nValues, Value values[]) {
     Catalog cat;
     getCatalog(relName, cat);
     if (nValues != cat.relcat.attrCount) {
         // TODO
     }
+    for (int i = 0; i < cat.relcat.attrCount; ++i) {
+        if (!filterValue(values[i], &(cat.attrcats[i]))) {
+            return;
+        }
+    }
 
     RM_FileHandle *handle;
     rmm->openFile(getPath(smm->dbName, relName), handle);
+    for (int i = 0; i < cat.relcat.attrCount; ++i) {
+        if (!checkUnique(values[i], &(cat.attrcats[i]), handle) || !checkReference(values[i], &(cat.attrcats[i]))) {
+            rmm->closeFile(*handle);
+            return;
+        }
+    }
+
     char *data = new char[cat.relcat.tupleLength];
     for (int i = 0; i < cat.relcat.attrCount; ++i) {
         memcpy(data + cat.attrcats[i].offset, padValue(values[i].data, values[i].type, cat.attrcats[i].attrLength),
@@ -106,7 +119,7 @@ void QL_Manager::del(const char *relName, int nConditions, const Condition condi
 
 
 void QL_Manager::update(const char *relName, const RelAttr &updAttr, const int bIsValue,
-                        const RelAttr &rhsRelAttr, const Value &rhsValue,
+                        const RelAttr &rhsRelAttr, Value &rhsValue,
                         int nConditions, const Condition conditions[]) {
     Catalog cat;
     getCatalog(relName, cat);
@@ -146,22 +159,30 @@ void QL_Manager::update(const char *relName, const RelAttr &updAttr, const int b
                 break;
             }
             if (singleValidate(relName, cat, nConditions, conditions, rec)) {
-                rids.push_back(rid);
+                rids.push_back(rec.getRid());
             }
         }
         fileScan.closeScan();
     }
 
-    const AttrcatLayout *updAc = locateAttrcat(relName, cat, updAttr);
-    const AttrcatLayout *rhsAc;
+    const AttrcatLayout *updAc = locateAttrcat(relName, cat, updAttr), *rhsAc;
     if (updAc == NULL) {
         return;
     }
-    if (!bIsValue) {
-        rhsAc = locateAttrcat(relName, cat, rhsRelAttr);
-        if (rhsAc == NULL) {
+    Value rhsValue_ = rhsValue;
+    if (bIsValue) {
+        rhsValue_ = rhsValue;
+        if (!filterValue(rhsValue_, updAc) || !checkUnique(rhsValue, updAc, handle) || !checkReference(rhsValue, updAc)) {
             return;
         }
+    } else {
+        rhsAc = locateAttrcat(relName, cat, rhsRelAttr);
+        rhsValue_.type = rhsAc->attrType;
+        rhsValue_.data = new char[rhsAc->attrLength];
+        memcpy(rhsValue_.data, rhsValue.data, rhsAc->attrLength);
+    }
+    if (bIsValue && !filterValue(rhsValue_, updAc)) {
+        return;
     }
 
     if (updAc->indexNo != -1) {
@@ -171,9 +192,14 @@ void QL_Manager::update(const char *relName, const RelAttr &updAttr, const int b
             ixHandle->deleteEntry(rec.getData() + updAc->offset, rids[k]);
             if (bIsValue) {
                 memcpy(rec.getData() + updAc->offset,
-                        padValue(rhsValue.data, updAc->attrType, updAc->attrLength), updAc->attrLength);
+                        padValue(rhsValue_.data, updAc->attrType, updAc->attrLength), updAc->attrLength);
             } else {
-                memcpy(rec.getData() + updAc->offset, rec.getData() + rhsAc->offset, updAc->attrLength);
+                memcpy(rhsValue_.data, rec.getData() + rhsAc->offset, rhsAc->attrLength);
+                if (!filterValue(rhsValue_, updAc)) {
+                    delete[] (char *)rhsValue_.data;
+                    return;
+                }
+                memcpy(rec.getData() + updAc->offset, rhsValue_.data, updAc->attrLength);
             }
             ixHandle->insertEntry(rec.getData() + updAc->offset, rids[k]);
         }
@@ -183,13 +209,26 @@ void QL_Manager::update(const char *relName, const RelAttr &updAttr, const int b
         handle->getRec(rids[i], rec);
         if (bIsValue) {
             memcpy(rec.getData() + updAc->offset,
-                    padValue(rhsValue.data, updAc->attrType, updAc->attrLength), updAc->attrLength);
+                    padValue(rhsValue_.data, updAc->attrType, updAc->attrLength), updAc->attrLength);
         } else {
-            memcpy(rec.getData() + updAc->offset, rec.getData() + rhsAc->offset, updAc->attrLength);
+            memcpy(rhsValue_.data, rec.getData() + rhsAc->offset, rhsAc->attrLength);
+            if (!filterValue(rhsValue_, updAc)) {
+                delete[] (char *)rhsValue_.data;
+                return;
+            }
+            memcpy(rec.getData() + updAc->offset, rhsValue_.data, updAc->attrLength);
         }
         handle->updateRec(rec);
     }
     rmm->closeFile(*handle);
+    if (!bIsValue) {
+        delete[] (char *)rhsValue_.data;
+    }
+}
+
+
+bool cmp(AttrcatLayout ac1, AttrcatLayout ac2) {
+    return ac1.offset < ac2.offset;
 }
 
 
@@ -212,6 +251,7 @@ bool QL_Manager::getCatalog(const char *relName, Catalog &cat) {
         smm->getAttrcatFromRid(rids[i], cat.attrcats[i]);
     }
 
+    sort(cat.attrcats, cat.attrcats + attrCount, cmp);
     return true;
 }
 
@@ -239,7 +279,7 @@ char *QL_Manager::getPath(const char *dbName, const char *relName) {
 
 void *QL_Manager::padValue(void *value, AttrType attrType, int attrLength) {
     if (value == NULL) {
-        memset(valBuf, 0, attrLength);
+        memset(valBuf, NULL_BYTE, attrLength);
         return valBuf;
     }
     if (attrType != STRING) {
@@ -252,4 +292,86 @@ void *QL_Manager::padValue(void *value, AttrType attrType, int attrLength) {
         valBuf[len] = ' ';
     }
     return valBuf;
+}
+
+
+bool QL_Manager::filterValue(Value &value, const AttrcatLayout *attrcat) {
+    if (value.data == NULL) {
+        if ((attrcat->constrFlag & 3) != 0) {
+            Error::nullError(attrcat->attrName);
+            return false;
+        }
+        value.type = attrcat->attrType;
+        return true;
+    }
+    if (attrcat->attrType == value.type) {
+        return true;
+    }
+    if (attrcat->attrType == STRING && value.type == VARSTRING) {
+        value.type = STRING;
+        return true;
+    }
+    if (attrcat->attrType == VARSTRING && value.type == STRING) {
+        value.type = VARSTRING;
+        return true;
+    }
+    if (attrcat->attrType == FLOAT && value.type == INT) {
+        value.type = FLOAT;
+        *((float *)value.data) = float(*((int *)value.data));
+        return true;
+    }
+    if (attrcat->attrType == DATE && (value.type == STRING || value.type == VARSTRING)) {
+        if (!convertToDate((char *)value.data)) {
+            Error::invalidDateError();
+            return false;
+        }
+        value.type = DATE;
+        return true;
+    }
+    Error::typeError(attrcat->attrType, value.type);
+    return false;
+}
+
+
+bool QL_Manager::checkUnique(Value &value, const AttrcatLayout *attrcat, RM_FileHandle *handle) {
+    if (value.data == NULL || ((attrcat->constrFlag >> 1) & 1) == 0) {
+        return true;
+    }
+    RM_FileScan scan;
+    scan.openScan(*handle, attrcat->attrType, attrcat->attrLength, attrcat->offset, EQ_OP, value.data);
+    RC rc;
+    RM_Record rec;
+    rc = scan.getNextRec(rec);
+    scan.closeScan();
+    if (rc == 0) {
+        Error::primaryNotUniqueError(attrcat->attrName);
+        return false;
+    }
+    return true;
+}
+
+
+bool QL_Manager::checkReference(Value &value, const AttrcatLayout *attrcat) {
+    if (((attrcat->constrFlag >> 2) & 1) == 0) {
+        return true;
+    }
+    RM_FileHandle *refHandle;
+    Catalog refCat;
+    getCatalog(attrcat->refRelName, refCat);
+    RelAttr ra = {NULL, attrcat->refAttrName};
+    const AttrcatLayout *refAc = locateAttrcat(attrcat->refRelName, refCat, ra);
+    rmm->openFile(getPath(smm->dbName, attrcat->refRelName), refHandle);
+
+    RM_FileScan scan;
+    scan.openScan(*refHandle, refAc->attrType, refAc->attrLength, refAc->offset, EQ_OP, value.data);
+    RC rc;
+    RM_Record rec;
+    rc = scan.getNextRec(rec);
+    scan.closeScan();
+    if (rc == RM_FILESCAN_NONEXT) {
+        Error::referenceError(attrcat->attrName, refAc->relName, refAc->attrName);
+        rmm->closeFile(*refHandle);
+        return false;
+    }
+    return true;
 }

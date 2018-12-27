@@ -1,7 +1,8 @@
 LEX = flex
 YACC = bison
 CC = g++
-SRCS = $(wildcard **/*.cpp)
+#SRCS = $(wildcard **/*.cpp)
+SRCS = $(wildcard ??/*.cpp) $(wildcard utils/*.cpp)
 #FS_HEADERS = $(wildcard fs/**/*.h)
 FS_HEADERS = fs/fileio/FileManager.h
 OBJS = $(SRCS:.cpp=.o)

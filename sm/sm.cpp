@@ -76,7 +76,28 @@ void SM_Manager::showCurrentDb() {
 
 
 bool SM_Manager::showDb(const char *dbName) {
-    // TODO
+    if (relcatHandle != NULL && attrcatHandle != NULL && strcmp(dbName, this->dbName) == 0) {
+        showCurrentDb();
+        return true;
+    }
+    char dbName_t[MAXNAME + 1];
+    strcpy(dbName_t, this->dbName);
+    if (!openDb(dbName)) {
+        return false;
+    }
+    showCurrentDb();
+    openDb(dbName_t);
+}
+
+
+void SM_Manager::showDbs() {
+    std::vector<std::string> dbs = rmm->listDir(".");
+    for (std::vector<std::string>::iterator it = dbs.begin(); it != dbs.end(); ++it) {
+        std::cout << std::endl;
+        std::cout << "---- " << *it << " ----" << std::endl;
+        showDb(it->c_str());
+        std::cout << std::endl;
+    }
 }
 
 
@@ -116,6 +137,19 @@ bool SM_Manager::createTable(const char *relName, int attrCount, AttrInfo *attri
         attrcat.attrLength = attr->attrLength;
         attrcat.indexNo = -1;
 
+        attrcat.constrFlag = 0;
+        if (attr->notNull) {
+            attrcat.constrFlag |= 1;
+        }
+        if (attr->isPrimary) {
+            attrcat.constrFlag |= 2;
+        }
+        if (attr->isForeign) {
+            attrcat.constrFlag |= 4;
+            strcpy(attrcat.refRelName, attr->refTbname);
+            strcpy(attrcat.refAttrName, attr->refColname);
+        }
+
         RID rid;
         attrcatHandle->insertRec((char *)(&attrcat), rid);
 
@@ -132,7 +166,40 @@ bool SM_Manager::createTable(const char *relName, int attrCount, AttrInfo *attri
 
 
 bool SM_Manager::showTable(const char *relName) {
-    // TODO
+    RM_FileScan scan;
+    scan.openScan(*attrcatHandle, VARSTRING, MAXNAME + 1, 0, EQ_OP, relName);
+    RM_Record rec;
+    RC rc;
+    while (true) {
+        rc = scan.getNextRec(rec);
+        if (rc == RM_FILESCAN_NONEXT) {
+            break;
+        }
+        AttrcatLayout attrcat = *(AttrcatLayout *)(rec.getData());
+        print(attrcat.attrName, VARSTRING, MAXNAME + 1);
+        std::cout << ": ";
+        printAttrType(attrcat.attrType, attrcat.attrLength);
+        std::cout << std::endl;
+    }
+    scan.closeScan();
+}
+
+
+bool SM_Manager::showTables() {
+    if (relcatHandle == NULL || attrcatHandle == NULL) {
+        return false;
+    }
+    std::vector<std::string> tbs = rmm->listDir(dbName);
+    for (std::vector<std::string>::iterator it = tbs.begin(); it != tbs.end(); ++it) {
+        if (*it == "relcat" || *it == "attrcat") {
+            continue;
+        }
+        std::cout << std::endl;
+        std::cout << "-- " << *it << " --" << std::endl;
+        showTable(it->c_str());
+        std::cout << std::endl;
+    }
+    return true;
 }
 
 

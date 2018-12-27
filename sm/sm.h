@@ -7,12 +7,11 @@
 
 
 struct AttrInfo {
-    char attrName[MAXNAME + 1], refTbname[MAXNAME + 1], refColname[MAXNAME + 1];
+    char attrName[MAXNAME + 1];
     AttrType attrType;
     int attrLength;
-    NotNull notNull;
-    IsPrimary isPrimary;
-    IsForeign isForeign;
+    char refTbname[MAXNAME + 1], refColname[MAXNAME + 1];
+    bool notNull, isPrimary, isForeign;
 };
 
 
@@ -37,10 +36,13 @@ struct RelcatLayout {
 struct AttrcatLayout {
     char relName[MAXNAME + 1];
     char attrName[MAXNAME + 1];
+    char refRelName[MAXNAME + 1];
+    char refAttrName[MAXNAME + 1];
     int offset;
     AttrType attrType;
     int attrLength;
     int indexNo;
+    int constrFlag;  // bit 0: notNull; bit 1: isPrimary; bit 2: isForeign
 };
 
 
@@ -58,9 +60,11 @@ public:
     bool closeDb();
     void showCurrentDb();
     bool showDb(const char *dbName);
+    void showDbs();
     bool createTable(const char *relName, int attrCount, AttrInfo *attributes);
     bool dropTable(const char *relName);
     bool showTable(const char *relName);
+    bool showTables();
     bool createIndex(const char *relName, const char *attrName);
     bool dropIndex(const char *relName, const char *attrName);
 
