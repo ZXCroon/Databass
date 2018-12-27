@@ -9,14 +9,20 @@ OBJS = $(SRCS:.cpp=.o)
 TEST_DIR = test_dbfiles
 LEXTARGET = parser/lex.yy.c
 YACCTARGET = parser/parser.tab.c
+TARGET = console
 
-all: $(LEXTARGET) $(YACCTARGET) $(OBJS) parser/lex.yy.o parser/parser.tab.o
+all: $(LEXTARGET) $(YACCTARGET) $(OBJS) parser/lex.yy.o parser/parser.tab.o $(TARGET)
 
 $(LEXTARGET): parser/parser.lex
 	$(LEX) -o $@ $^
 
 $(YACCTARGET): parser/parser.y
 	$(YACC) -d -o $@ $^
+
+$(TARGET): $(LEXTARGET) $(YACCTARGET) $(OBJS)
+	$(CC) -o $@ $^
+	rm -rf $(TEST_DIR)
+	mkdir $(TEST_DIR)
 
 test: test.o $(OBJS)
 	$(CC) -o test $^

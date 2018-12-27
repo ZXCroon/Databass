@@ -14,8 +14,11 @@
     #include "../utils/utils.h"
     #define YYSTYPE SemValue
     void yyerror(const char*);
+    void prompt();
+    bool isCmd = true;
     int yylex(void);
     extern FILE *yyin;
+    extern int yyparse();
 %}
 
 %token VALUE_INT VALUE_FLOAT VALUE_STRING
@@ -47,7 +50,7 @@ SysStmt             :   SHOW DATABASES
                         {
                             OrderPack pack(OrderPack::SHOW_DATABASES);
                             pack.process();
-
+                            prompt();
                         }
                     |   EXIT
                         {
@@ -61,23 +64,27 @@ DbStmt              :   CREATE DATABASE IDENTIFIER
                             OrderPack pack(OrderPack::CREATE_DATABASE);
                             pack.dbname = $3.id;
                             pack.process();
+                            prompt();
                         }
                     |   DROP DATABASE IDENTIFIER
                         {
                             OrderPack pack(OrderPack::DROP_DATABASE);
                             pack.dbname = $3.id;
                             pack.process();
+                            prompt();
                         }
                     |   USE IDENTIFIER
                         {
                             OrderPack pack(OrderPack::USE_DATABASE);
                             pack.dbname = $2.id;
                             pack.process();
+                            prompt();
                         }
                     |   SHOW TABLES
                         {
                             OrderPack pack(OrderPack::SHOW_TABLES);
                             pack.process();
+                            prompt();
                         }
                     ;
 
@@ -87,18 +94,21 @@ TbStmt              :   CREATE TABLE IDENTIFIER '(' FieldList ')'
                             pack.tbname = $3.id;
                             pack.attrList = $5.attrList;
                             pack.process();
+                            prompt();
                         }
                     |   DROP TABLE IDENTIFIER
                         {
                             OrderPack pack(OrderPack::DROP_TABLE);
                             pack.tbname = $3.id;
                             pack.process();
+                            prompt();
                         }
                     |   DESC IDENTIFIER
                         {
                             OrderPack pack(OrderPack::DESC_TABLE);
                             pack.tbname = $2.id;
                             pack.process();
+                            prompt();
                         }
                     |   INSERT INTO IDENTIFIER VALUES ValueLists
                         {
@@ -106,6 +116,7 @@ TbStmt              :   CREATE TABLE IDENTIFIER '(' FieldList ')'
                             pack.tbname = $3.id;
                             pack.valuesList = $5.valuesList;
                             pack.process();
+                            prompt();
                         }
                     |   DELETE FROM IDENTIFIER WHERE WhereClause
                         {
@@ -113,6 +124,7 @@ TbStmt              :   CREATE TABLE IDENTIFIER '(' FieldList ')'
                             pack.tbname = $3.id;
                             pack.condEntry = $5.condEntry;
                             pack.process();
+                            prompt();
                         }
                     |   UPDATE IDENTIFIER SET SetClause WHERE WhereClause
                         {
@@ -121,6 +133,7 @@ TbStmt              :   CREATE TABLE IDENTIFIER '(' FieldList ')'
                             pack.setList = $4.setList;
                             pack.condEntry = $6.condEntry;
                             pack.process();
+                            prompt();
                         }
                     |   SELECT Selector FROM TableList WHERE WhereClause
                         {
@@ -129,6 +142,7 @@ TbStmt              :   CREATE TABLE IDENTIFIER '(' FieldList ')'
                             pack.tableList = $4.tableList;
                             pack.condEntry = $6.condEntry;
                             pack.process();
+                            prompt();
                         }
                     ;
 
@@ -138,6 +152,7 @@ IdxStmt             :   CREATE INDEX IDENTIFIER  '(' IDENTIFIER ')'
                             pack.tbname = $3.id;
                             pack.colname = $5.id;
                             pack.process();
+                            prompt();
                         }
                     |   DROP INDEX IDENTIFIER '(' IDENTIFIER ')'
                         {
@@ -145,6 +160,7 @@ IdxStmt             :   CREATE INDEX IDENTIFIER  '(' IDENTIFIER ')'
                             pack.tbname = $3.id;
                             pack.colname = $5.id;
                             pack.process();
+                            prompt();
                         }
                     ;
 
@@ -395,6 +411,12 @@ TableList           :   IDENTIFIER
 
 %%
 
+void prompt() {
+    if (isCmd) {
+        printf("Databass>\n");
+    }
+}
+
 void yyerror(const char *s) {}
 
 int main(int argc, char **argv) {
@@ -417,11 +439,13 @@ int main(int argc, char **argv) {
             std::cout << "Input File not Exist!" << std::endl;
             return -1;
         }
+        isCmd = false;
         yyin = pFile;
         yyparse();
     }
-    if (argc == 1) {
-        yyparse();
-    }
+    isCmd = true;
+    prompt();
+    yyparse();
+
     return 0;
 }

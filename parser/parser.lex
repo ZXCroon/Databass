@@ -6,6 +6,9 @@
 #include "parser.tab.h"
 void yyerror(const char*);
 %}
+
+%option noyywrap
+
 DIGIT ([0-9])
 NUMBER ({DIGIT}+)
 VALUE_INT ([+\-]?{NUMBER})
@@ -134,7 +137,8 @@ NEWLINE (\r|\n|\r\n)
                                             yylval.value = (void*)yytext;
                                             return VALUE_STRING;
                                         }
+
+.                                       {
+                                            return 256;
+                                        }
 %%
-int yywrap() {
-    return 1;
-}

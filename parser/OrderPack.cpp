@@ -5,28 +5,34 @@ void OrderPack::process() {
 
     case SHOW_DATABASES: {
         // todo
+        printf("SHOW_DATABASES!\n");
         break;
     }
 
     case CREATE_DATABASE: {
-        smm.createDb(dbname);
+        // smm.createDb(dbname);
         break;
     }
 
     case DROP_DATABASE: {
-        smm.dropDb(dbname);
+        // smm.dropDb(dbname);
         break;
     }
 
     case USE_DATABASE: {
-        smm.openDb(dbname);
+        // smm.openDb(dbname);
         break;
     }
 
     case SHOW_TABLES: {
         // todo
-        break;   
+        break;
     }
     
+    case EXIT: {
+        //todo
+        printf("EXIT!\n");
+        exit(0);
+    }
     }
 }
