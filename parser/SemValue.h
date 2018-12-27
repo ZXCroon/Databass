@@ -3,6 +3,7 @@
 
 #include "../utils/defs.h"
 #include "../sm/sm.h"
+#include "../ql/ql.h"
 #include <cstring>
 #include <vector>
 
@@ -160,6 +161,8 @@ public:
     AttrList attrList;
     std::vector<void*> values;
     std::vector<std::vector<void*> > valuesList;
+    std::vector<AttrType> valueTypes;
+    std::vector<std::vector<AttrType> > valueTypesList;
     CondEntry condEntry;
     SetList setList;
     SelectList selectList;

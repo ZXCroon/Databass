@@ -71,7 +71,15 @@ void OrderPack::process() {
     }
 
     case INSERT_VALUES: {
-        // todo
+        int size = valuesList.size();
+        for (int i = 0; i < size; ++i) {
+            int len = valuesList[i].size();
+            Value values[len];
+            for (int j = 0; j < len; ++j) {
+                values[j] = {valueTypesList[i][j], valuesList[i][j]};
+            }
+            qlm.insert(tbname, len, values);
+        }
         break;
     }
 

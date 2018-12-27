@@ -41,6 +41,7 @@ public:
     CondEntry condEntry;
     SetList setList;
     std::vector<std::vector<void*> > valuesList;
+    std::vector<std::vector<AttrType> > valueTypesList;
     SelectList selectList;
     std::vector<char*> tableList;
 };

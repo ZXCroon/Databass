@@ -121,6 +121,7 @@ TbStmt              :   CREATE TABLE IDENTIFIER '(' FieldList ')' ';'
                             OrderPack pack(OrderPack::INSERT_VALUES);
                             pack.tbname = $3.id;
                             pack.valuesList = $5.valuesList;
+                            pack.valueTypesList = $5.valueTypesList;
                             pack.process();
                             prompt();
                         }
@@ -232,11 +233,15 @@ ValueLists          :   '(' ValueList ')'
                         {
                             $$.valuesList.clear();
                             $$.valuesList.push_back($2.values);
+                            $$.valueTypesList.clear();
+                            $$.valueTypesList.push_back($2.valueTypes);
                         }
                     |   ValueLists ',' '(' ValueList ')'
                         {
                             $$.valuesList = $1.valuesList;
                             $$.valuesList.push_back($4.values);
+                            $$.valueTypesList = $1.valueTypesList;
+                            $$.valueTypesList.push_back($4.valueTypes);
                         }
                     ;
 
@@ -244,25 +249,32 @@ ValueList           :   Value
                         {
                             $$.values.clear();
                             $$.values.push_back($1.value);
+                            $$.valueTypes.clear();
+                            $$.valueTypes.push_back($1.attrType);
                         }
                     |   ValueList ',' Value
                         {
                             $$.values = $1.values;
                             $$.values.push_back($3.value);
+                            $$.valueTypes = $1.valueTypes;
+                            $$.valueTypes.push_back($3.attrType);
                         }
                     ;
 
 Value               :   VALUE_INT
                         {
                             $$.value = $1.value;
+                            $$.attrType = INT;
                         }
                     |   VALUE_STRING
                         {
                             $$.value = $1.value;
+                            $$.attrType = STRING;
                         }
                     |   VALUE_FLOAT
                         {
                             $$.value = $1.value;
+                            $$.attrType = FLOAT;
                         }
                     |   NUL
                         {
@@ -428,7 +440,9 @@ void prompt() {
     }
 }
 
-void yyerror(const char *s) {}
+void yyerror(const char *s) {
+    printf("wrong %s\n", s);
+}
 
 int main(int argc, char **argv) {
     if (argc > 2) {
