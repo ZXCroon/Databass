@@ -228,6 +228,8 @@ void test2() {
     }
 
     smm.closeDb();
+    smm.dropDb("trydb");
+    smm.showDbs();
 }
 
 

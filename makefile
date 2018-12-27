@@ -2,10 +2,11 @@ LEX = flex
 YACC = bison
 CC = g++
 SRCS = $(wildcard **/*.cpp)
-#SRCS = $(wildcard ??/*.cpp) $(wildcard utils/*.cpp)
+SRCS_FOR_TEST = $(wildcard ??/*.cpp) $(wildcard utils/*.cpp) test.cpp
 #FS_HEADERS = $(wildcard fs/**/*.h)
 FS_HEADERS = fs/fileio/FileManager.h
 OBJS = $(SRCS:.cpp=.o)
+OBJS_FOR_TEST = $(SRCS_FOR_TEST:.cpp=.o)
 
 TEST_DIR = test_dbfiles
 LEXTARGET = parser/lex.yy.c
@@ -25,7 +26,7 @@ $(TARGET): $(LEXTARGET) $(YACCTARGET) $(OBJS)
 	rm -rf $(TEST_DIR)
 	mkdir $(TEST_DIR)
 
-test: test.o $(OBJS)
+test: $(OBJS_FOR_TEST)
 	$(CC) -o test $^
 	rm -rf $(TEST_DIR)
 	mkdir $(TEST_DIR)

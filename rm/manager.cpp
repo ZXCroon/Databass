@@ -46,7 +46,7 @@ bool RM_Manager::deleteFile(const char *fileName) {
 
 
 bool RM_Manager::deleteDir(const char *dirName) {
-    return deleteFile(dirName);
+    return bpm->fileManager->deleteDir(dirName);
 }
 
 

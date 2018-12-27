@@ -141,6 +141,14 @@ public:
     bool deleteFile(const char*name) {
         return remove(fullName(name)) == 0;
     }
+    bool deleteDir(const char*name) {
+        std::vector<std::string> filenames = listDir(name);
+        for (std::vector<std::string>::iterator it = filenames.begin(); it != filenames.end(); ++it) {
+            deleteFile((std::string(name) + '/' + *it).c_str());
+        }
+        return rmdir(fullName(name)) == 0;
+        return false;
+    }
     bool createDir(const char* name) {
         struct stat st = {0};
         if (stat(fullName(name), &st) == -1) {
