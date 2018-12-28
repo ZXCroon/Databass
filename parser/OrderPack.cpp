@@ -84,7 +84,15 @@ void OrderPack::process() {
     }
 
     case DELETE_VALUES: {
-        // todo
+        printf("DEBUG: DELETE %s %d\n", tbname, conditionList.size());
+        int size = conditionList.size();
+        Condition conditions[size];
+        for (int i = 0; i < size; ++i) {
+            conditions[i] = conditionList[i];
+        }
+        printf("DEBUG: start deleting\n");
+        qlm.del(tbname, size, conditions);
+        printf("DEBUG: finish deleting\n");
         break;
     }
 

@@ -129,7 +129,7 @@ TbStmt              :   CREATE TABLE IDENTIFIER '(' FieldList ')' ';'
                         {
                             OrderPack pack(OrderPack::DELETE_VALUES);
                             pack.tbname = $3.id;
-                            pack.condEntry = $5.condEntry;
+                            pack.conditionList = $5.conditionList;
                             pack.process();
                             prompt();
                         }
@@ -138,7 +138,7 @@ TbStmt              :   CREATE TABLE IDENTIFIER '(' FieldList ')' ';'
                             OrderPack pack(OrderPack::UPDATE_VALUES);
                             pack.tbname = $2.id;
                             pack.setList = $4.setList;
-                            pack.condEntry = $6.condEntry;
+                            pack.conditionList = $6.conditionList;
                             pack.process();
                             prompt();
                         }
@@ -147,7 +147,7 @@ TbStmt              :   CREATE TABLE IDENTIFIER '(' FieldList ')' ';'
                             OrderPack pack(OrderPack::SELECT_VALUES);
                             pack.selectList = $2.selectList;
                             pack.tableList = $4.tableList;
-                            pack.condEntry = $6.condEntry;
+                            pack.conditionList = $6.conditionList;
                             pack.process();
                             prompt();
                         }
@@ -284,84 +284,137 @@ Value               :   VALUE_INT
 
 WhereClause         :   Col '=' Expr
                         {
-                            $$.condEntry.calcOp = CondEntry::EQUAL;
-                            $$.condEntry.leftTbname = $1.tbname;
-                            $$.condEntry.leftColname = $1.colname;
-                            $$.condEntry.leftValue = $1.value;
-                            $$.condEntry.rightTbname = $3.tbname;
-                            $$.condEntry.rightColname = $3.colname;
-                            $$.condEntry.rightValue = $3.value;
+                            $$.conditionList.clear();
+                            Condition condition;
+                            condition.lhsAttr = {$1.tbname, $1.colname};
+                            condition.op = EQ_OP;
+                            if ($3.value == NULL) {
+                                condition.bRhsIsAttr = 1;
+                                condition.rhsAttr = {$3.tbname, $3.colname};
+                            }
+                            else {
+                                condition.bRhsIsAttr = 0;
+                                condition.rhsValue = {$3.attrType, $3.value};
+                            }
+                            $$.conditionList.push_back(condition);
                         }
 
                     |   Col NE Expr
                         {
-                            $$.condEntry.calcOp = CondEntry::NOT_EQUAL;
-                            $$.condEntry.leftTbname = $1.tbname;
-                            $$.condEntry.leftColname = $1.colname;
-                            $$.condEntry.leftValue = $1.value;
-                            $$.condEntry.rightTbname = $3.tbname;
-                            $$.condEntry.rightColname = $3.colname;
-                            $$.condEntry.rightValue = $3.value;
+                            $$.conditionList.clear();
+                            Condition condition;
+                            condition.lhsAttr = {$1.tbname, $1.colname};
+                            condition.op = NE_OP;
+                            if ($3.value == NULL) {
+                                condition.bRhsIsAttr = 1;
+                                condition.rhsAttr = {$3.tbname, $3.colname};
+                            }
+                            else {
+                                condition.bRhsIsAttr = 0;
+                                condition.rhsValue = {$3.attrType, $3.value};
+                            }
+                            $$.conditionList.push_back(condition);
                         }
                     |   Col LE Expr
                         {
-                            $$.condEntry.calcOp = CondEntry::LESS_EQUAL;
-                            $$.condEntry.leftTbname = $1.tbname;
-                            $$.condEntry.leftColname = $1.colname;
-                            $$.condEntry.leftValue = $1.value;
-                            $$.condEntry.rightTbname = $3.tbname;
-                            $$.condEntry.rightColname = $3.colname;
-                            $$.condEntry.rightValue = $3.value;
+                            $$.conditionList.clear();
+                            Condition condition;
+                            condition.lhsAttr = {$1.tbname, $1.colname};
+                            condition.op = LE_OP;
+                            if ($3.value == NULL) {
+                                condition.bRhsIsAttr = 1;
+                                condition.rhsAttr = {$3.tbname, $3.colname};
+                            }
+                            else {
+                                condition.bRhsIsAttr = 0;
+                                condition.rhsValue = {$3.attrType, $3.value};
+                            }
+                            $$.conditionList.push_back(condition);
                         }
                     |   Col GE Expr
                         {
-                            $$.condEntry.calcOp = CondEntry::GREATER_EQUAL;
-                            $$.condEntry.leftTbname = $1.tbname;
-                            $$.condEntry.leftColname = $1.colname;
-                            $$.condEntry.leftValue = $1.value;
-                            $$.condEntry.rightTbname = $3.tbname;
-                            $$.condEntry.rightColname = $3.colname;
-                            $$.condEntry.rightValue = $3.value;
+                            $$.conditionList.clear();
+                            Condition condition;
+                            condition.lhsAttr = {$1.tbname, $1.colname};
+                            condition.op = GE_OP;
+                            if ($3.value == NULL) {
+                                condition.bRhsIsAttr = 1;
+                                condition.rhsAttr = {$3.tbname, $3.colname};
+                            }
+                            else {
+                                condition.bRhsIsAttr = 0;
+                                condition.rhsValue = {$3.attrType, $3.value};
+                            }
+                            $$.conditionList.push_back(condition);
                         }
                     |   Col '<' Expr
                         {
-                            $$.condEntry.calcOp = CondEntry::LESS;
-                            $$.condEntry.leftTbname = $1.tbname;
-                            $$.condEntry.leftColname = $1.colname;
-                            $$.condEntry.leftValue = $1.value;
-                            $$.condEntry.rightTbname = $3.tbname;
-                            $$.condEntry.rightColname = $3.colname;
-                            $$.condEntry.rightValue = $3.value;
+                            $$.conditionList.clear();
+                            Condition condition;
+                            condition.lhsAttr = {$1.tbname, $1.colname};
+                            condition.op = LT_OP;
+                            if ($3.value == NULL) {
+                                condition.bRhsIsAttr = 1;
+                                condition.rhsAttr = {$3.tbname, $3.colname};
+                            }
+                            else {
+                                condition.bRhsIsAttr = 0;
+                                condition.rhsValue = {$3.attrType, $3.value};
+                            }
+                            $$.conditionList.push_back(condition);
                         }
                     |   Col '>' Expr
                         {
-                            $$.condEntry.calcOp = CondEntry::GREATER;
-                            $$.condEntry.leftTbname = $1.tbname;
-                            $$.condEntry.leftColname = $1.colname;
-                            $$.condEntry.leftValue = $1.value;
-                            $$.condEntry.rightTbname = $3.tbname;
-                            $$.condEntry.rightColname = $3.colname;
-                            $$.condEntry.rightValue = $3.value;
+                            $$.conditionList.clear();
+                            Condition condition;
+                            condition.lhsAttr = {$1.tbname, $1.colname};
+                            condition.op = GT_OP;
+                            if ($3.value == NULL) {
+                                condition.bRhsIsAttr = 1;
+                                condition.rhsAttr = {$3.tbname, $3.colname};
+                            }
+                            else {
+                                condition.bRhsIsAttr = 0;
+                                condition.rhsValue = {$3.attrType, $3.value};
+                            }
+                            $$.conditionList.push_back(condition);
                         }
                     |   Col IS NUL
                         {
-                            $$.condEntry.calcOp = CondEntry::IS_NULL;
-                            $$.condEntry.leftTbname = $1.tbname;
-                            $$.condEntry.leftColname = $1.colname;
-                            $$.condEntry.leftValue = $1.value;
+                            $$.conditionList.clear();
+                            Condition condition;
+                            condition.lhsAttr = {$1.tbname, $1.colname};
+                            condition.op = ISNULL_OP;
+                            if ($3.value == NULL) {
+                                condition.bRhsIsAttr = 1;
+                                condition.rhsAttr = {$3.tbname, $3.colname};
+                            }
+                            else {
+                                condition.bRhsIsAttr = 0;
+                                condition.rhsValue = {$3.attrType, $3.value};
+                            }
+                            $$.conditionList.push_back(condition);
                         }
                     |   Col IS NOT NUL
                         {
-                            $$.condEntry.calcOp = CondEntry::IS_NOT_NULL;
-                            $$.condEntry.leftTbname = $1.tbname;
-                            $$.condEntry.leftColname = $1.colname;
-                            $$.condEntry.leftValue = $1.value;
+                            $$.conditionList.clear();
+                            Condition condition;
+                            condition.lhsAttr = {$1.tbname, $1.colname};
+                            condition.op = NOTNULL_OP;
+                            if ($3.value == NULL) {
+                                condition.bRhsIsAttr = 1;
+                                condition.rhsAttr = {$3.tbname, $3.colname};
+                            }
+                            else {
+                                condition.bRhsIsAttr = 0;
+                                condition.rhsValue = {$3.attrType, $3.value};
+                            }
+                            $$.conditionList.push_back(condition);
                         }
                     |   WhereClause AND WhereClause
                         {
-                            $$.condEntry.calcOp = CondEntry::AND;
-                            $$.condEntry.leftEntry = &($1.condEntry);
-                            $$.condEntry.rightEntry = &($3.condEntry);
+                            $$.conditionList = $1.conditionList;
+                            $$.conditionList.insert($$.conditionList.end(), $3.conditionList.begin(), $3.conditionList.end());
                         }
                     ;
 
@@ -380,6 +433,7 @@ Col                 :   IDENTIFIER '.' IDENTIFIER
 Expr                :   Value
                         {
                             $$.value = $1.value;
+                            $$.attrType = $1.attrType;
                             $$.tbname = NULL;
                             $$.colname = NULL;
                         }

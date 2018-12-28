@@ -38,7 +38,7 @@ public:
     OrderType type;
     char *dbname, *tbname, *colname;
     AttrList attrList;
-    CondEntry condEntry;
+    std::vector<Condition> conditionList;
     SetList setList;
     std::vector<std::vector<void*> > valuesList;
     std::vector<std::vector<AttrType> > valueTypesList;

@@ -78,7 +78,7 @@ public:
     std::vector<AttrEntry> attrList;
 };
 
-
+/*
 class CondEntry {
 
 public:
@@ -101,11 +101,11 @@ public:
         leftValue = NULL;
         rightValue = NULL;
     };
-    CalcOp calcOp;
+    CompOp compOp;
     char *leftTbname, *leftColname, *rightTbname, *rightColname;
     void *leftValue, *rightValue;
     CondEntry *leftEntry, *rightEntry;
-};
+};*/
 
 
 class SetList {
@@ -163,7 +163,7 @@ public:
     std::vector<std::vector<void*> > valuesList;
     std::vector<AttrType> valueTypes;
     std::vector<std::vector<AttrType> > valueTypesList;
-    CondEntry condEntry;
+    std::vector<Condition> conditionList;
     SetList setList;
     SelectList selectList;
     std::vector<char*> tableList;
