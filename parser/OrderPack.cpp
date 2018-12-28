@@ -89,6 +89,12 @@ void OrderPack::process() {
         Condition conditions[size];
         for (int i = 0; i < size; ++i) {
             conditions[i] = conditionList[i];
+            if (conditions[i].lhsAttr.attrName != NULL && conditions[i].lhsAttr.relName == NULL) {
+                conditions[i].lhsAttr.relName = tbname;
+            }
+            if (conditions[i].rhsAttr.attrName != NULL && conditions[i].rhsAttr.relName == NULL) {
+                conditions[i].rhsAttr.relName = tbname;
+            }
         }
         printf("DEBUG: start deleting\n");
         qlm.del(tbname, size, conditions);
@@ -97,12 +103,46 @@ void OrderPack::process() {
     }
 
     case UPDATE_VALUES: {
-        // todo
+        int size = conditionList.size();
+        Condition conditions[size];
+        for (int i = 0; i < size; ++i) {
+            conditions[i] = conditionList[i];
+            if (conditions[i].lhsAttr.attrName != NULL && conditions[i].lhsAttr.relName == NULL) {
+                conditions[i].lhsAttr.relName = tbname;
+            }
+            if (conditions[i].rhsAttr.attrName != NULL && conditions[i].rhsAttr.relName == NULL) {
+                conditions[i].rhsAttr.relName = tbname;
+            }
+        }
+        printf("DEBUG: start updating\n");
+        qlm.update(tbname, updAttr, (updValue.data != NULL), updRhsAttr, updValue, size, conditions);
+        printf("DEBUG: finish updating\n");
         break;
     }
 
     case SELECT_VALUES: {
-        // todo
+        int size = conditionList.size();
+        Condition conditions[size];
+        for (int i = 0; i < size; ++i) {
+            conditions[i] = conditionList[i];
+            if (conditions[i].lhsAttr.attrName != NULL && conditions[i].lhsAttr.relName == NULL) {
+                conditions[i].lhsAttr.relName = tbname;
+            }
+            if (conditions[i].rhsAttr.attrName != NULL && conditions[i].rhsAttr.relName == NULL) {
+                conditions[i].rhsAttr.relName = tbname;
+            }
+        }
+        if (selectList.selectType == SelectList::ALL) {
+            qlm.select(-1, NULL, tableList[0], tableList[1], INNER_JOIN, size, conditions);
+        }
+        else {
+            int len = selectList.attrList.size();
+            RelAttr selAttrs[len];
+            for (int i = 0; i < len; ++i) {
+                selAttrs[i] = selectList.attrList[i];
+            }
+            qlm.select(len, selAttrs, tableList[0], tableList[1], INNER_JOIN, size, conditions);
+        }
         break;
     }
 

@@ -43,6 +43,8 @@ public:
     std::vector<std::vector<void*> > valuesList;
     std::vector<std::vector<AttrType> > valueTypesList;
     SelectList selectList;
+    RelAttr updAttr, updRhsAttr;
+    Value updValue;
     std::vector<char*> tableList;
 };
 

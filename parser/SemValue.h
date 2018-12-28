@@ -133,16 +133,14 @@ public:
     };
     void clear() {
         selectType = NORMAL;
-        tbnameList.clear();
-        colnameList.clear();
+        attrList.clear();
     }
     void add(char *tbname, char *colname) {
-        tbnameList.push_back(tbname);
-        colnameList.push_back(colname);
+        RelAttr relAttr = {tbname, colname};
+        attrList.push_back(relAttr);
     }
     SelectType selectType;
-    std::vector<char*> tbnameList;
-    std::vector<char*> colnameList;
+    std::vector<RelAttr> attrList;
 };
 
 
