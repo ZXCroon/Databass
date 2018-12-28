@@ -53,6 +53,8 @@ TYPE_DATE ("date"|"DATE")
 TYPE_FLOAT ("float"|"FLOAT")
 FOREIGN ("foreign"|"FOREIGN")
 
+TYPE_CHAR ("char"|"CHAR")
+
 WHITESPACE ([ \t]+)
 NEWLINE (\r|\n|\r\n)
 %x COMMENT
@@ -97,6 +99,8 @@ NEWLINE (\r|\n|\r\n)
 {TYPE_DATE}                             { return SemValue::keyword(TYPE_DATE); }
 {TYPE_FLOAT}                            { return SemValue::keyword(TYPE_FLOAT); }
 {FOREIGN}                               { return SemValue::keyword(FOREIGN); }
+
+{TYPE_CHAR}                             { return SemValue::keyword(TYPE_CHAR); }
 
 {LE}                                    { return SemValue::keyword(LE); }
 {GE}                                    { return SemValue::keyword(GE); }

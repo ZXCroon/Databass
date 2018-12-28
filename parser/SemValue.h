@@ -3,6 +3,7 @@
 
 #include "../utils/defs.h"
 #include "../sm/sm.h"
+#include "../ql/ql.h"
 #include <cstring>
 #include <vector>
 
@@ -77,7 +78,7 @@ public:
     std::vector<AttrEntry> attrList;
 };
 
-
+/*
 class CondEntry {
 
 public:
@@ -100,11 +101,11 @@ public:
         leftValue = NULL;
         rightValue = NULL;
     };
-    CalcOp calcOp;
+    CompOp compOp;
     char *leftTbname, *leftColname, *rightTbname, *rightColname;
     void *leftValue, *rightValue;
     CondEntry *leftEntry, *rightEntry;
-};
+};*/
 
 
 class SetList {
@@ -160,7 +161,9 @@ public:
     AttrList attrList;
     std::vector<void*> values;
     std::vector<std::vector<void*> > valuesList;
-    CondEntry condEntry;
+    std::vector<AttrType> valueTypes;
+    std::vector<std::vector<AttrType> > valueTypesList;
+    std::vector<Condition> conditionList;
     SetList setList;
     SelectList selectList;
     std::vector<char*> tableList;
