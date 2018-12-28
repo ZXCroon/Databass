@@ -133,12 +133,14 @@ TbStmt              :   CREATE TABLE IDENTIFIER '(' FieldList ')' ';'
                             pack.process();
                             prompt();
                         }
-                    |   UPDATE IDENTIFIER SET SetClause WHERE WhereClause ';'
+                    |   UPDATE IDENTIFIER SET IDENTIFIER '=' Expr WHERE WhereClause ';'
                         {
                             OrderPack pack(OrderPack::UPDATE_VALUES);
                             pack.tbname = $2.id;
-                            pack.setList = $4.setList;
-                            pack.conditionList = $6.conditionList;
+                            pack.updAttr = {$2.id, $4.id};
+                            pack.updRhsAttr = {$6.tbname, $6.colname};
+                            pack.updValue = {$6.attrType, $6.value};
+                            pack.conditionList = $8.conditionList;
                             pack.process();
                             prompt();
                         }
@@ -442,18 +444,6 @@ Expr                :   Value
                             $$.value = NULL;
                             $$.tbname = $1.tbname;
                             $$.colname = $1.colname;
-                        }
-                    ;
-
-SetClause           :   IDENTIFIER '=' Value
-                        {
-                            $$.setList.clear();
-                            $$.setList.add($1.id, $3.value);
-                        }
-                    |   SetClause ',' IDENTIFIER '=' Value
-                        {
-                            $$.setList = $1.setList;
-                            $$.setList.add($3.id, $5.value);
                         }
                     ;
 
