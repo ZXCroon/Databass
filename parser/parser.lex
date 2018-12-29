@@ -19,6 +19,7 @@ EXIT ("EXIT"|"exit")
 LE ("<=")
 GE (">=")
 NE ("<>")
+LIKE ('like'|'LIKE')
 OPERATOR ("<"|">"|"="|","|"."|";"|"*"|"("|")")
 
 DATABASE ("database"|"DATABASE")
@@ -105,6 +106,7 @@ NEWLINE (\r|\n|\r\n)
 {LE}                                    { return SemValue::keyword(LE); }
 {GE}                                    { return SemValue::keyword(GE); }
 {NE}                                    { return SemValue::keyword(NE); }
+{LIKE}                                  { return SemValue::keyword(LIKE); }
 {OPERATOR}                              { return *yytext; }
 
 {IDENTIFIER}                            {
@@ -141,7 +143,11 @@ NEWLINE (\r|\n|\r\n)
 {VALUE_STRING}                          {
                                             yylval = SemValue();
                                             yylval.code = VALUE_STRING;
-                                            yylval.value = (void*)yytext;
+                                            int len = strlen(yytext) - 2;
+                                            char *chars = new char[len + 1];
+                                            memcpy(chars, yytext + 1, len);
+                                            chars[len] = '\0';
+                                            yylval.value = (void*)chars;
                                             return VALUE_STRING;
                                         }
 

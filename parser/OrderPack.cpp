@@ -121,6 +121,22 @@ void OrderPack::process() {
     }
 
     case SELECT_VALUES: {
+        char *relation1, *relation2;
+        JoinType joinType;
+        if (tableList.size() == 1) {
+            relation1 = tableList[0];
+            relation2 = NULL;
+            joinType = NO_JOIN;
+        }
+        else if (tableList.size() == 2) {
+            relation1 = tableList[0];
+            relation2 = tableList[1];
+            joinType = INNER_JOIN;
+        }
+        else {
+            printf("TOO MANY RELATIONS!\n");
+            return;
+        }
         int size = conditionList.size();
         Condition conditions[size];
         for (int i = 0; i < size; ++i) {
@@ -133,7 +149,7 @@ void OrderPack::process() {
             }
         }
         if (selectList.selectType == SelectList::ALL) {
-            qlm.select(-1, NULL, tableList[0], tableList[1], INNER_JOIN, size, conditions);
+            qlm.select(-1, NULL, relation1, relation2, joinType, size, conditions);
         }
         else {
             int len = selectList.attrList.size();
@@ -141,7 +157,9 @@ void OrderPack::process() {
             for (int i = 0; i < len; ++i) {
                 selAttrs[i] = selectList.attrList[i];
             }
-            qlm.select(len, selAttrs, tableList[0], tableList[1], INNER_JOIN, size, conditions);
+            printf("DEBUG: start selecting\n");
+            qlm.select(len, selAttrs, relation1, relation2, joinType, size, conditions);
+            printf("DEBUG: finish selecting\n");
         }
         break;
     }
