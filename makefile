@@ -32,7 +32,7 @@ test: $(OBJS_FOR_TEST)
 	mkdir $(TEST_DIR)
 	./test
 
-%.o: %.c %.h $(FS_HEADERS)
+%.o: %.c %.h
 	$(CC) -c -o $@ $^
 
 clean:

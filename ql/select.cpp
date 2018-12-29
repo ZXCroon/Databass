@@ -146,11 +146,37 @@ RC QL_Manager::select(int nSelAttrs, const RelAttr selAttrs[],
 
     // nested-loop case
 
+    const RelAttr *selAttrs_ = selAttrs;
+    RelAttr *selAttrs__;
+    int nSelAttrs_ = nSelAttrs;
+    // SELECT *
+    if (nSelAttrs < 0) {
+        if (joinType == NO_JOIN) {
+            nSelAttrs_ = cat1.relcat.attrCount;
+            selAttrs__ = new RelAttr[nSelAttrs_];
+            for (int i = 0; i < nSelAttrs_; ++i) {
+                selAttrs__[i].relName = NULL;
+                selAttrs__[i].attrName = cat1.attrcats[i].attrName;
+            }
+        } else {
+            nSelAttrs_ = cat1.relcat.attrCount + cat2.relcat.attrCount;
+            selAttrs__ = new RelAttr[nSelAttrs_];
+            for (int i = 0; i < cat1.relcat.attrCount; ++i) {
+                selAttrs__[i].relName = relation1;
+                selAttrs__[i].attrName = cat1.attrcats[i].attrName;
+            }
+            for (int i = 0; i < cat2.relcat.attrCount; ++i) {
+                selAttrs__[i + cat1.relcat.attrCount].relName = relation2;
+                selAttrs__[i + cat1.relcat.attrCount].attrName = cat2.attrcats[i].attrName;
+            }
+        }
+        selAttrs_ = selAttrs__;
+    }
     // output
     std::cout << "|";
-    for (int i = 0; i < nSelAttrs; ++i) {
+    for (int i = 0; i < nSelAttrs_; ++i) {
         std::cout << " ";
-        print(selAttrs[i].attrName, VARSTRING, MAXNAME + 1);
+        print(selAttrs_[i].attrName, VARSTRING, MAXNAME + 1);
         std::cout << " |";
     }
     std::cout << std::endl;
@@ -158,8 +184,8 @@ RC QL_Manager::select(int nSelAttrs, const RelAttr selAttrs[],
         for (int i = 0; i < rids.size(); ++i) {
             std::cout << "|";
             handle1->getRec(rids[i], rec);
-            for (int j = 0; j < nSelAttrs; ++j) {
-                const AttrcatLayout *ac = locateAttrcat(relation1, cat1, selAttrs[j]);
+            for (int j = 0; j < nSelAttrs_; ++j) {
+                const AttrcatLayout *ac = locateAttrcat(relation1, cat1, selAttrs_[j]);
                 std::cout << " ";
                 print(rec.getData() + ac->offset, ac->attrType, ac->attrLength);
                 std::cout << " |";
@@ -175,10 +201,10 @@ RC QL_Manager::select(int nSelAttrs, const RelAttr selAttrs[],
             if (prids[i].second != RID(-1, -1)) {
                 handle2->getRec(prids[i].second, rec_);
             }
-            for (int j = 0; j < nSelAttrs; ++j) {
+            for (int j = 0; j < nSelAttrs_; ++j) {
                 std::cout << " ";
-                const AttrcatLayout *ac = locateAttrcat(relation1, cat1, selAttrs[j]);
-                const AttrcatLayout *ac_ = locateAttrcat(relation2, cat2, selAttrs[j]);
+                const AttrcatLayout *ac = locateAttrcat(relation1, cat1, selAttrs_[j]);
+                const AttrcatLayout *ac_ = locateAttrcat(relation2, cat2, selAttrs_[j]);
                 if (ac != NULL && prids[i].first != RID(-1, -1)) {
                     print(rec.getData() + ac->offset, ac->attrType, ac->attrLength);
                 } else if (ac_ != NULL && prids[i].second != RID(-1, -1)) {
@@ -195,6 +221,8 @@ RC QL_Manager::select(int nSelAttrs, const RelAttr selAttrs[],
     rmm->closeFile(*handle1);
     if (joinType != NO_JOIN) {
         rmm->closeFile(*handle2);
+    } else {
+        delete[] selAttrs_;
     }
     return 0;
 }
@@ -248,21 +276,23 @@ bool QL_Manager::pairValidate(const char *relation1, const char *relation2,
     }
 
     // hidden equalities
+    /*
     for (int i = 0; i < cat1.relcat.attrCount; ++i) {
         for (int j = 0; j < cat2.relcat.attrCount; ++j) {
             if (strcmp(cat1.attrcats[i].attrName, cat2.attrcats[j].attrName) != 0) {
                 continue;
             }
             RelAttr ra = {NULL, cat1.attrcats[i].attrName};
-        const AttrcatLayout *acl = locateAttrcat(relation1, cat1, ra);
-        const AttrcatLayout *acr = locateAttrcat(relation2, cat2, ra);
-        if (acl != NULL && acr != NULL) {
-            if (!validate(rec1.getData() + acl->offset, acl->attrType, acl->attrLength, EQ_OP, rec2.getData() + acr->offset)) {
-                return false;
+            const AttrcatLayout *acl = locateAttrcat(relation1, cat1, ra);
+            const AttrcatLayout *acr = locateAttrcat(relation2, cat2, ra);
+            if (acl != NULL && acr != NULL) {
+                if (!validate(rec1.getData() + acl->offset, acl->attrType, acl->attrLength, EQ_OP, rec2.getData() + acr->offset)) {
+                    return false;
+                }
             }
         }
-        }
     }
+    */
     return true;
 }
 
@@ -394,6 +424,7 @@ bool QL_Manager::decideStrategy(const char *relation1, const char *relation2,
     }
 
     // decide strategy according to hidden equalities of join attrs
+    /*
     if (strat.strat1.attrcat == NULL || strat.strat2.attrcat == NULL) {
         for (int i = 0; i < cat1.relcat.attrCount; ++i) {
             RelAttr ra = {NULL, cat1.attrcats[i].attrName};
@@ -415,6 +446,7 @@ bool QL_Manager::decideStrategy(const char *relation1, const char *relation2,
             }
         }
     }
+    */
 
 
     /*

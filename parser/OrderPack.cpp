@@ -76,7 +76,7 @@ void OrderPack::process() {
             int len = valuesList[i].size();
             Value values[len];
             for (int j = 0; j < len; ++j) {
-                values[j] = {valueTypesList[i][j], valuesList[i][j]};
+                values[j] = (Value) {valueTypesList[i][j], valuesList[i][j]};
             }
             qlm.insert(tbname, len, values);
         }
