@@ -141,7 +141,11 @@ NEWLINE (\r|\n|\r\n)
 {VALUE_STRING}                          {
                                             yylval = SemValue();
                                             yylval.code = VALUE_STRING;
-                                            yylval.value = (void*)yytext;
+                                            int len = strlen(yytext) - 2;
+                                            char *chars = new char[len + 1];
+                                            memcpy(chars, yytext + 1, len);
+                                            chars[len] = '\0';
+                                            yylval.value = (void*)chars;
                                             return VALUE_STRING;
                                         }
 
