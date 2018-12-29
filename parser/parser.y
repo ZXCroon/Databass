@@ -35,7 +35,7 @@
 %token INSERT INTO VALUES DELETE
 %token FROM WHERE UPDATE SET SELECT
 %token TYPE_INT TYPE_VARCHAR TYPE_FLOAT TYPE_DATE TYPE_CHAR
-%token AND LE GE NE
+%token AND LE GE NE LIKE
 %token INDEX
 
 %left AND
@@ -399,6 +399,22 @@ WhereClause         :   Col '=' Expr
                             Condition condition;
                             condition.lhsAttr = {$1.tbname, $1.colname};
                             condition.op = GT_OP;
+                            if ($3.value == NULL) {
+                                condition.bRhsIsAttr = 1;
+                                condition.rhsAttr = {$3.tbname, $3.colname};
+                            }
+                            else {
+                                condition.bRhsIsAttr = 0;
+                                condition.rhsValue = {$3.attrType, $3.value};
+                            }
+                            $$.conditionList.push_back(condition);
+                        }
+                    |   Col LIKE Expr
+                        {
+                            $$.conditionList.clear();
+                            Condition condition;
+                            condition.lhsAttr = {$1.tbname, $1.colname};
+                            condition.op = LIKE_OP;
                             if ($3.value == NULL) {
                                 condition.bRhsIsAttr = 1;
                                 condition.rhsAttr = {$3.tbname, $3.colname};
