@@ -19,7 +19,7 @@ EXIT ("EXIT"|"exit")
 LE ("<=")
 GE (">=")
 NE ("<>")
-LIKE ('like'|'LIKE')
+LIKE ("like"|"LIKE")
 OPERATOR ("<"|">"|"="|","|"."|";"|"*"|"("|")")
 
 DATABASE ("database"|"DATABASE")
