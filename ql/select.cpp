@@ -221,7 +221,8 @@ RC QL_Manager::select(int nSelAttrs, const RelAttr selAttrs[],
     rmm->closeFile(*handle1);
     if (joinType != NO_JOIN) {
         rmm->closeFile(*handle2);
-    } else {
+    }
+    if (nSelAttrs < 0) {
         delete[] selAttrs_;
     }
     return 0;
