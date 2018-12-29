@@ -35,7 +35,7 @@
 %token INSERT INTO VALUES DELETE
 %token FROM WHERE UPDATE SET SELECT
 %token TYPE_INT TYPE_VARCHAR TYPE_FLOAT TYPE_DATE TYPE_CHAR
-%token AND LE GE NE
+%token AND LE GE NE LIKE
 %token INDEX
 
 %left AND
@@ -133,6 +133,14 @@ TbStmt              :   CREATE TABLE IDENTIFIER '(' FieldList ')' ';'
                             pack.process();
                             prompt();
                         }
+                    |   DELETE FROM IDENTIFIER ';'
+                        {
+                            OrderPack pack(OrderPack::DELETE_VALUES);
+                            pack.tbname = $3.id;
+                            pack.conditionList.clear();
+                            pack.process();
+                            prompt();
+                        }
                     |   UPDATE IDENTIFIER SET IDENTIFIER '=' Expr WHERE WhereClause ';'
                         {
                             OrderPack pack(OrderPack::UPDATE_VALUES);
@@ -144,12 +152,32 @@ TbStmt              :   CREATE TABLE IDENTIFIER '(' FieldList ')' ';'
                             pack.process();
                             prompt();
                         }
+                    |   UPDATE IDENTIFIER SET IDENTIFIER '=' Expr';'
+                        {
+                            OrderPack pack(OrderPack::UPDATE_VALUES);
+                            pack.tbname = $2.id;
+                            pack.updAttr = {$2.id, $4.id};
+                            pack.updRhsAttr = {$6.tbname, $6.colname};
+                            pack.updValue = {$6.attrType, $6.value};
+                            pack.conditionList.clear();
+                            pack.process();
+                            prompt();
+                        }
                     |   SELECT Selector FROM TableList WHERE WhereClause ';'
                         {
                             OrderPack pack(OrderPack::SELECT_VALUES);
                             pack.selectList = $2.selectList;
                             pack.tableList = $4.tableList;
                             pack.conditionList = $6.conditionList;
+                            pack.process();
+                            prompt();
+                        }
+                    |   SELECT Selector FROM TableList ';'
+                        {
+                            OrderPack pack(OrderPack::SELECT_VALUES);
+                            pack.selectList = $2.selectList;
+                            pack.tableList = $4.tableList;
+                            pack.conditionList.clear();
                             pack.process();
                             prompt();
                         }
@@ -371,6 +399,22 @@ WhereClause         :   Col '=' Expr
                             Condition condition;
                             condition.lhsAttr = {$1.tbname, $1.colname};
                             condition.op = GT_OP;
+                            if ($3.value == NULL) {
+                                condition.bRhsIsAttr = 1;
+                                condition.rhsAttr = {$3.tbname, $3.colname};
+                            }
+                            else {
+                                condition.bRhsIsAttr = 0;
+                                condition.rhsValue = {$3.attrType, $3.value};
+                            }
+                            $$.conditionList.push_back(condition);
+                        }
+                    |   Col LIKE Expr
+                        {
+                            $$.conditionList.clear();
+                            Condition condition;
+                            condition.lhsAttr = {$1.tbname, $1.colname};
+                            condition.op = LIKE_OP;
                             if ($3.value == NULL) {
                                 condition.bRhsIsAttr = 1;
                                 condition.rhsAttr = {$3.tbname, $3.colname};
