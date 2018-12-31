@@ -1,6 +1,6 @@
 #include <string>
-#include <sstream>
 #include "ix.h"
+#include <cstdio>
 
 
 IX_Manager::IX_Manager(BufPageManager &bpm) : bpm(&bpm) {}
@@ -10,7 +10,7 @@ IX_Manager::~IX_Manager() {}
 
 
 RC IX_Manager::createIndex(const char *filename, int indexNo, AttrType attrType, int attrLength) {
-    const char *indexFilename = getIndexFilename(filename, indexNo);
+    char *indexFilename = getIndexFilename(filename, indexNo);
     if (!bpm->fileManager->createFile(indexFilename)) {
         return IX_MANAGER_CREATEFAILED;
     }
@@ -38,13 +38,13 @@ RC IX_Manager::createIndex(const char *filename, int indexNo, AttrType attrType,
 
 
 bool IX_Manager::deleteIndex(const char *filename, int indexNo) {
-    const char *indexFilename = getIndexFilename(filename, indexNo);
+    char *indexFilename = getIndexFilename(filename, indexNo);
     return bpm->fileManager->deleteFile(indexFilename);
 }
 
 
 bool IX_Manager::openIndex(const char *filename, int indexNo, IX_IndexHandle *&indexHandle) {
-    const char *indexFilename = getIndexFilename(filename, indexNo);
+    char *indexFilename = getIndexFilename(filename, indexNo);
     int fileId;
     if (!bpm->fileManager->openFile(indexFilename, fileId)) {
         return false;
@@ -60,10 +60,12 @@ bool IX_Manager::closeIndex(IX_IndexHandle &indexHandle) {
 }
 
 
-const char* IX_Manager::getIndexFilename(const char* filename, int indexNo) {
-    string temp(filename);
-    std::stringstream ss;
-    ss << indexNo;
-    temp += '.' + ss.str();
-    return temp.c_str();
+char* IX_Manager::getIndexFilename(const char* filename, int indexNo) {
+    char *indexNum = new char[256];
+    sprintf(indexNum, "%d", indexNo);
+    char *ans = new char[strlen(filename) + strlen(indexNum) + 1];
+    strcpy(ans, filename);
+    strcat(ans, ".");
+    strcat(ans, indexNum);
+    return ans;
 }

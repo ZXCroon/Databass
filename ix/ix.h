@@ -141,7 +141,7 @@ public:
     bool closeIndex(IX_IndexHandle &indexHandle);
 
 private:
-    const char* getIndexFilename(const char* filename, int indexNo);
+    char* getIndexFilename(const char* filename, int indexNo);
 
     BufPageManager *bpm;
 };
