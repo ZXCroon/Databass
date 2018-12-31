@@ -207,7 +207,7 @@ bool IX_IndexHandle::getRec(const RID &rid, IX_Record &rec) const {
     SlotNum slotNum = rid.getSlotNum();
     char *page = getPageData(pageNum, false);
     rec = IX_Record(recordSize, attrLength, rid);
-    if (((IX_PageHeader *)page)->bitmap & (1 << slotNum)) {
+    if (queryBit(((IX_PageHeader *)page)->bitmap, slotNum) == 1) {
         memcpy(rec.getData(), page + getSlotOffset(slotNum), recordSize);
         return true;
     } else {
@@ -219,13 +219,14 @@ bool IX_IndexHandle::getRec(const RID &rid, IX_Record &rec) const {
 bool IX_IndexHandle::insertRec(const char *pData, RID &rid) {
     PageNum pageNum = getFreePage();
     IX_PageHeader *ph = (IX_PageHeader *)getPageData(pageNum, false);
-    SlotNum slotNum = 0;
-    for (Bits x = ph->bitmap; x & 1; (x <<= 1), ++slotNum);
+    SlotNum slotNum = findRightMost(ph->bitmap, 0);
+    
     ph = (IX_PageHeader *)getPageData(pageNum, true);
     rid = RID(pageNum, slotNum);
     memcpy(((char *)ph) + getSlotOffset(slotNum), pData, recordSize);
-    ph->bitmap |= (1 << slotNum);
-    if ((ph->bitmap & ((1 << maxRecordCnt) - 1)) == ((1 << maxRecordCnt) - 1)) {
+    setBit(ph->bitmap, slotNum, 1);
+    int tmp = findRightMost(ph->bitmap, 0);
+    if (tmp == -1 || tmp >= maxRecordCnt) {
         return removeFreePage(pageNum);
     }
     return true;
@@ -236,12 +237,12 @@ bool IX_IndexHandle::deleteRec(const RID &rid) {
     PageNum pageNum = rid.getPageNum();
     SlotNum slotNum = rid.getSlotNum();
     IX_PageHeader *ph = (IX_PageHeader *)getPageData(pageNum, false);
-    bool oriFull = ((ph->bitmap & ((1 << maxRecordCnt) - 1)) == ((1 << maxRecordCnt) - 1));
-    if ((ph->bitmap | ~(1 << slotNum)) == 0) {
+    bool oriFull = findRightMost(ph->bitmap, 0) == -1;
+    if (queryBit(ph->bitmap, slotNum) == 0) {
         return false;
     }
     ph = (IX_PageHeader *)getPageData(pageNum, true);
-    ph->bitmap &= ~(1 << slotNum);
+    setBit(ph->bitmap, slotNum, 0);
     if (oriFull) {
         return insertFreePage(pageNum, false);
     }
@@ -254,7 +255,7 @@ bool IX_IndexHandle::updateRec(const IX_Record &rec) {
     PageNum pageNum = rid.getPageNum();
     SlotNum slotNum = rid.getSlotNum();
     IX_PageHeader *ph = (IX_PageHeader *)getPageData(pageNum, false);
-    if ((ph->bitmap | ~(1 << slotNum)) == 0) {
+    if (queryBit(ph->bitmap, slotNum) == 0) {
         return false;
     }
     char *page = getPageData(pageNum, true);
@@ -709,7 +710,7 @@ bool IX_IndexHandle::insertFreePage(PageNum pageNum, bool isNew) const {
     IX_FileHeaderPage *header = (IX_FileHeaderPage *)getPageData(0, true);
     IX_PageHeader *ph = (IX_PageHeader *)getPageData(pageNum, true);
     if (isNew) {
-        ph->bitmap = 0;
+        initBitMap(ph->bitmap);
         ph->prevFree = ph->nextFree = NO_PAGE;
     }
     if (header->firstFree == NO_PAGE) {

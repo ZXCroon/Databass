@@ -3,6 +3,7 @@
 
 #include <assert.h>
 #include "../utils/defs.h"
+#include "../utils/utils.h"
 #include "../rm/rm_rid.h"
 #include "../fs/bufmanager/BufPageManager.h"
 
@@ -18,7 +19,7 @@ struct IX_FileHeaderPage {
 
 struct IX_PageHeader {
     PageNum prevFree, nextFree;
-    Bits bitmap, nullmap;
+    BitMap bitmap;
 };
 
 

@@ -37,5 +37,5 @@ test: $(OBJS_FOR_TEST)
 
 clean:
 	rm -f test
-	rm -f test.o $(OBJS)
+	rm -f test.o $(OBJS) $(wildcard parser/*.o)
 	rm -f parser/parser.tab.c parser/parser.tab.h parser/lex.yy.c $(TARGET)
