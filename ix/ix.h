@@ -29,12 +29,13 @@ public:
     IX_Record();
     IX_Record(int size, int attrLength, const RID &rid);
     ~IX_Record();
+    IX_Record &operator=(const IX_Record &rec);
 
     char *getData() const;
     RID getRid() const;
 
 private:
-    int size, attrLength;
+    int attrLength, size;
     char *pData;
     RID rid;
 };
