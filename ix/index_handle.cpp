@@ -486,18 +486,16 @@ void IX_IndexHandle::combinePair(RID &u, RID &v, void *pData, const RID &rid) {
     if (u == root) {
         char *tempData = new char[recordSize];
         memset(tempData, 0, recordSize);
+        *getIsLeaf(tempData) = 0;
+        *getSize(tempData) = 1;
+        memcpy(getIndexValue(tempData, 0), pData, attrLength);
+        memcpy(getIndexRID(tempData, 0), &rid, sizeof(RID));
+        memcpy(getChild(tempData, 0), &u, sizeof(RID));
+        memcpy(getChild(tempData, 1), &v, sizeof(RID));
+        *(getPrev(tempData)) = RID(-1, -1);
+        *(getNext(tempData)) = RID(-1, -1);
         insertRec(tempData, root);
-        IX_Record tempRec;
-        assert(getRec(root, tempRec) == true);
-        *(getIsLeaf(tempRec.getData())) = 0;
-        *(getSize(tempRec.getData())) = 1;
-        memcpy(getIndexValue(tempRec.getData(), 0), pData, attrLength);
-        memcpy(getIndexRID(tempRec.getData(), 0), &rid, sizeof(RID));
-        memcpy(getChild(tempRec.getData(), 0), &u, sizeof(RID));
-        memcpy(getChild(tempRec.getData(), 1), &v, sizeof(RID));
-        *(getPrev(tempRec.getData())) = RID(-1, -1);
-        *(getNext(tempRec.getData())) = RID(-1, -1);
-        updateRec(tempRec);
+
         IX_FileHeaderPage *header = (IX_FileHeaderPage *)getPageData(0, true);
         header->root = root;
 
