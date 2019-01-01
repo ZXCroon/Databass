@@ -72,11 +72,11 @@ RC IX_IndexScan::getNextEntry(RID &rid) {
         return IX_INDEXSCAN_EOF;
     }
 
-    if (compOp == EQ_OP && !indexHandle->indexEQ(value, RID(-1, -1), rec.getIndexValue(pos), RID(-1, -1))) {
+    if (compOp == EQ_OP && !indexHandle->indexEQ(value, RID(-1, -1), indexHandle->getIndexValue(rec.getData(), pos), RID(-1, -1))) {
         return IX_INDEXSCAN_EOF;
     }
     //todo get the record of res in node
-    rid = *(rec.getIndexRID(pos));
+    rid = *(indexHandle->getIndexRID(rec.getData(), pos));
     indexHandle->searchNext(res, pos, direct);
     return 0;
 }

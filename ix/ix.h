@@ -30,18 +30,8 @@ public:
     IX_Record(int size, int attrLength, const RID &rid);
     ~IX_Record();
 
-    int *getIsLeaf() const;
-    int *getSize() const;
-    RID *getIndexRID(int i) const;
-    RID *getChild(int i) const;
-    RID *getFather() const;
-    RID *getPrev() const;
-    RID *getNext() const;
-    void *getIndexValue(int i) const;
-
     char *getData() const;
     RID getRid() const;
-    void nullify();
 
 private:
     int size, attrLength;
@@ -91,11 +81,22 @@ public:
     bool indexLE(void *data1, RID rid1, void *data2, RID rid2) const;
     bool indexLT(void *data1, RID rid1, void *data2, RID rid2) const;
 
+    friend class IX_IndexScan;
+
 private:
     PageNum getFreePage();
     char *getPageData(PageNum pageNum, bool write) const;
     bool insertFreePage(PageNum pageNum, bool isNew) const;
     bool removeFreePage(PageNum pageNum) const;
+
+    int *getIsLeaf(char *pData) const;
+    int *getSize(char *pData) const;
+    RID *getIndexRID(char *pData, int i) const;
+    RID *getChild(char *pData, int i) const;
+    RID *getFather(char *pData) const;
+    RID *getPrev(char *pData) const;
+    RID *getNext(char *pData) const;
+    void *getIndexValue(char *pData, int i) const;
 
     inline int getSlotOffset(SlotNum slotNum) const {
         return sizeof(IX_PageHeader) + slotNum * recordSize;
