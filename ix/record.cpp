@@ -14,6 +14,18 @@ IX_Record::~IX_Record() {
 }
 
 
+IX_Record &IX_Record::operator=(const IX_Record &rec) {
+    this->size = rec.size;
+    if (this->pData != NULL) {
+        delete[] this->pData;
+    }
+    this->pData = new char[rec.size];
+    memcpy(this->pData, rec.pData, rec.size);
+    this->rid = rec.rid;
+    return *this;
+}
+
+
 char *IX_Record::getData() const {
     return pData;
 }
