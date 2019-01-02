@@ -50,7 +50,7 @@ DESC ("desc"|"DESC")
 REFERENCES ("references"|"REFERENCES")
 INDEX ("index"|"INDEX")
 AND ("and"|"AND")
-TYPE_DATE ("date"|"DATE")
+TYPE_DATE ("DATE")
 TYPE_FLOAT ("float"|"FLOAT")
 FOREIGN ("foreign"|"FOREIGN")
 
