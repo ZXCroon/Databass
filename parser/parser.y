@@ -19,6 +19,7 @@
     int yylex(void);
     extern FILE *yyin;
     extern int yyparse();
+    extern char *yytext;
     FileManager fm("test_dbfiles");
     BufPageManager bpm(&fm);
     RM_Manager rmm(&bpm);
@@ -529,7 +530,7 @@ void prompt() {
 }
 
 void yyerror(const char *s) {
-    printf("wrong %s\n", s);
+    printf("wrong %s %s\n", s, yytext);
 }
 
 int main(int argc, char **argv) {
