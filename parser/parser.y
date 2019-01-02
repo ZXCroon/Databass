@@ -26,6 +26,7 @@
     IX_Manager ixm(bpm);
     SM_Manager smm(&ixm, &rmm);
     QL_Manager qlm(&smm, &ixm, &rmm);
+    int count = 0;
 %}
 
 %token VALUE_INT VALUE_FLOAT VALUE_STRING
@@ -262,6 +263,10 @@ Type                :   TYPE_INT '(' VALUE_INT ')'
 
 ValueLists          :   '(' ValueList ')'
                         {
+                            ++count;
+                            if (count % 1000 == 0) {
+                                printf("parsing %d\n", count);
+                            }
                             $$.valuesList.clear();
                             $$.valuesList.push_back($2.values);
                             $$.valueTypesList.clear();
@@ -269,9 +274,11 @@ ValueLists          :   '(' ValueList ')'
                         }
                     |   ValueLists ',' '(' ValueList ')'
                         {
-                            $$.valuesList = $1.valuesList;
+                            ++count;
+                            if (count % 1000 == 0) {
+                                printf("parsing %d\n", count);
+                            }
                             $$.valuesList.push_back($4.values);
-                            $$.valueTypesList = $1.valueTypesList;
                             $$.valueTypesList.push_back($4.valueTypes);
                         }
                     ;
@@ -285,9 +292,7 @@ ValueList           :   Value
                         }
                     |   ValueList ',' Value
                         {
-                            $$.values = $1.values;
                             $$.values.push_back($3.value);
-                            $$.valueTypes = $1.valueTypes;
                             $$.valueTypes.push_back($3.attrType);
                         }
                     ;
