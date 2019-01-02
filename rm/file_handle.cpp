@@ -81,6 +81,9 @@ bool RM_FileHandle::updateRec(const RM_Record &rec) {
 
 void RM_FileHandle::startVisiting() {
     pnForScan = 1;
+    if (pnForScan > availPageCnt) {
+        return;
+    }
     BitMap bm = ((PageHeader *)getPageData(1, false))->bitmap;
     memcpy((char *)(&bmForScan), (char *)(&bm), sizeof(bmForScan));
 }

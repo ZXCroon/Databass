@@ -11,7 +11,7 @@
 #include <errno.h>
 #include <dirent.h>
 #include "../utils/MyLinkList.h"
-#include "../utils/MyBitMap.h"
+#include "../../utils/utils.h"
 #include "../utils/pagedef.h"
 using namespace std;
 class FileManager {
@@ -20,9 +20,7 @@ private:
 	int fd[MAX_FILE_NUM];
     char baseDir[500];
     char pathBuf[500];
-	MyBitMap* fm;
-	MyBitMap* tm;
-    int maxFileId;
+    BitMap fm;
     char *fullName(const char *name) {
         strcpy(pathBuf, baseDir);
         strcat(pathBuf, name);
@@ -49,9 +47,8 @@ public:
 	/*
 	 * FilManager构造函数
 	 */
-	FileManager(const char* baseDir) : maxFileId(0) {
-		fm = new MyBitMap(MAX_FILE_NUM, 1);
-		tm = new MyBitMap(MAX_TYPE_NUM, 1);
+	FileManager(const char* baseDir) {
+        initBitMap(fm);
         strcpy(this->baseDir, baseDir);
         int len = strlen(baseDir);
         if (baseDir[len - 1] != '/') {
@@ -110,7 +107,7 @@ public:
 	 * 返回:操作成功，返回0
 	 */
 	int closeFile(int fileID) {
-		// fm->setBit(fileID, 1);
+        setBit(fm, fileID, 0);
 		int f = fd[fileID];
 		close(f);
 		return 0;
@@ -133,9 +130,8 @@ public:
 	 * 返回:如果成功打开，在fileID中存储为该文件分配的id，返回true，否则返回false
 	 */
 	bool openFile(const char* name, int& fileID) {
-		// fileID = fm->findLeftOne();
-		// fm->setBit(fileID, 0);
-        fileID = maxFileId ++;
+        fileID = findRightMost(fm, 0);
+        setBit(fm, fileID, 1);
 		return _openFile(name, fileID) == 0;
 	}
     bool deleteFile(const char*name) {
@@ -174,17 +170,7 @@ public:
         }
         return res;
     }
-	int newType() {
-		int t = tm->findLeftOne();
-		tm->setBit(t, 0);
-		return t;
-	}
-	void closeType(int typeID) {
-		tm->setBit(typeID, 1);
-	}
 	void shutdown() {
-		delete tm;
-		delete fm;
 	}
 	~FileManager() {
 		this->shutdown();
