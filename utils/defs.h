@@ -6,7 +6,6 @@ typedef int PageNum;
 const int ALL_PAGES = -1;
 const int NO_PAGE = -2;
 typedef int SlotNum;
-typedef unsigned long long Bits;
 const unsigned char NULL_BYTE = 234;
 
 

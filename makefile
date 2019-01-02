@@ -1,6 +1,6 @@
 LEX = flex
 YACC = bison
-CC = g++ -std=c++11
+CC = g++ -std=c++11 -O2
 SRCS = $(wildcard **/*.cpp)
 SRCS_FOR_TEST = $(wildcard ??/*.cpp) $(wildcard utils/*.cpp) test.cpp
 #FS_HEADERS = $(wildcard fs/**/*.h)
@@ -37,5 +37,5 @@ test: $(OBJS_FOR_TEST)
 
 clean:
 	rm -f test
-	rm -f test.o $(OBJS)
+	rm -f test.o $(OBJS) $(wildcard parser/*.o)
 	rm -f parser/parser.tab.c parser/parser.tab.h parser/lex.yy.c $(TARGET)

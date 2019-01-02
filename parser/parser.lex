@@ -12,7 +12,7 @@ void yyerror(const char*);
 DIGIT ([0-9])
 NUMBER ({DIGIT}+)
 VALUE_INT ([+\-]?{NUMBER})
-VALUE_STRING ('[^']*')
+VALUE_STRING ('(\\.|[^'\\])*')
 
 IDENTIFIER ([A-Za-z][_0-9A-Za-z]*)
 EXIT ("EXIT"|"exit")
@@ -50,7 +50,7 @@ DESC ("desc"|"DESC")
 REFERENCES ("references"|"REFERENCES")
 INDEX ("index"|"INDEX")
 AND ("and"|"AND")
-TYPE_DATE ("date"|"DATE")
+TYPE_DATE ("DATE")
 TYPE_FLOAT ("float"|"FLOAT")
 FOREIGN ("foreign"|"FOREIGN")
 

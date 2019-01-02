@@ -72,6 +72,7 @@ void OrderPack::process() {
 
     case INSERT_VALUES: {
         int size = valuesList.size();
+        printf("DEBUG: INSERT %d\n", size);
         for (int i = 0; i < size; ++i) {
             int len = valuesList[i].size();
             Value values[len];

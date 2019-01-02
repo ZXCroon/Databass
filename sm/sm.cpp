@@ -269,7 +269,7 @@ bool SM_Manager::createIndex(const char *relName, const char *attrName) {
             break;
         }
         RID rid;
-        ixHandle->insertEntry(rec.getData() + attrcat.offset, rid);
+        ixHandle->insertEntry(rec.getData() + attrcat.offset, rec.getRid());
     }
     ixm->closeIndex(*ixHandle);
     rmm->closeFile(*handle);
