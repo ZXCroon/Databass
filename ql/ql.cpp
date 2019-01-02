@@ -49,10 +49,6 @@ void QL_Manager::insert(const char *relName, int nValues, Value values[]) {
     }
     delete[] data;
     rmm->closeFile(*handle);
-    // int t;
-    // if (strcmp(relName, "class") == 0) {
-        // cin >> t;
-    // }
 }
 
 

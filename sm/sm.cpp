@@ -332,15 +332,6 @@ bool SM_Manager::getRelcatRid(const char *relName, RID &rid) {
 
 
 bool SM_Manager::getAttrcatRids(const char *relName, const char *attrName, RID *rids, int &ridCount) {
-    // char relNamePad[MAXNAME + 1];
-    // strcpy(relNamePad, relName);
-    // padName(relNamePad);
-    // char attrNamePad[MAXNAME + 1];
-    // if (attrName) {
-        // strcpy(attrNamePad, attrName);
-        // padName(attrNamePad);
-    // }
-
     ridCount = 0;
     RM_FileScan scan;
     RM_Record rec;

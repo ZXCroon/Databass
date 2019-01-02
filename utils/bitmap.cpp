@@ -41,7 +41,7 @@ void initBitMap(struct BitMap &bm) {
 }
 
 void setBit(struct BitMap &bm, int index, int b) {
-    int k = index / 16, t = index % 16;
+    int k = index / 64, t = index % 64;
     if (b == 0) {
         bm.leaf[k] &= ~(1LL << t);
         bm.rootForFull &= US(~(1 << k));
@@ -58,7 +58,7 @@ void setBit(struct BitMap &bm, int index, int b) {
 }
 
 int queryBit(struct BitMap bm, int index) {
-    return (bm.leaf[index / 16] >> (index % 16)) & 1;
+    return (bm.leaf[index / 64] >> (index % 64)) & 1;
 }
 
 int findRightMost(struct BitMap bm, int b) {
@@ -71,7 +71,7 @@ int findRightMost(struct BitMap bm, int b) {
     if (k == -1) {
         return -1;
     }
-    return findRightMostInInteger(bm.leaf[k], b);
+    return k * 64 + findRightMostInInteger(bm.leaf[k], b);
 }
 
 void print(const struct BitMap &bm) {
