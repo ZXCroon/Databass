@@ -40,8 +40,9 @@ public:
     AttrList attrList;
     std::vector<Condition> conditionList;
     SetList setList;
-    std::vector<std::vector<void*> > valuesList;
-    std::vector<std::vector<AttrType> > valueTypesList;
+    int tupleSize;
+    std::vector<void*> values;
+    std::vector<AttrType> valueTypes;
     SelectList selectList;
     RelAttr updAttr, updRhsAttr;
     Value updValue;
