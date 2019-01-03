@@ -91,7 +91,7 @@ void QL_Manager::del(const char *relName, int nConditions, const Condition condi
                 break;
             }
             if (singleValidate(relName, cat, nConditions, conditions, rec)) {
-                rids.push_back(rid);
+                rids.push_back(rec.getRid());
             }
         }
         fileScan.closeScan();
