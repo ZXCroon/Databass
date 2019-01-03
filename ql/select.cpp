@@ -238,7 +238,7 @@ bool QL_Manager::singleValidate(const char *relation, const Catalog &cat, int nC
         }
         if (cond.bRhsIsAttr) {
             const AttrcatLayout *ac_ = locateAttrcat(relation, cat, cond.rhsAttr);
-            if (ac != NULL && !validate(rec.getData() + ac->offset, rec.getData() + ac_->offset,
+            if (ac_ != NULL && !validate(rec.getData() + ac->offset, rec.getData() + ac_->offset,
                         ac->attrType, ac_->attrType, ac->attrLength, ac_->attrLength, cond.op, true)) {
                 return false;
             }
