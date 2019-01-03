@@ -131,7 +131,7 @@ void OrderPack::process() {
         else if (tableList.size() == 2) {
             relation1 = tableList[0];
             relation2 = tableList[1];
-            joinType = INNER_JOIN;
+            joinType = this->joinType;
         }
         else {
             printf("TOO MANY RELATIONS!\n");
