@@ -71,15 +71,14 @@ void OrderPack::process() {
     }
 
     case INSERT_VALUES: {
-        int size = valuesList.size();
-        printf("DEBUG: INSERT %d\n", size);
+        int size = values.size() / tupleSize;
+        printf("DEBUG: INSERT %d %d\n", size, tupleSize);
         for (int i = 0; i < size; ++i) {
-            int len = valuesList[i].size();
-            Value values[len];
-            for (int j = 0; j < len; ++j) {
-                values[j] = (Value) {valueTypesList[i][j], valuesList[i][j]};
+            Value tempValues[tupleSize];
+            for (int j = 0; j < tupleSize; ++j) {
+                tempValues[j] = (Value) {valueTypes[i * tupleSize + j], values[i * tupleSize + j]};
             }
-            qlm.insert(tbname, len, values);
+            qlm.insert(tbname, tupleSize, tempValues);
         }
         break;
     }

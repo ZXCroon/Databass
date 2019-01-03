@@ -157,10 +157,9 @@ public:
     int attrLength;
     AttrEntry attrEntry;
     AttrList attrList;
+    int tupleSize;
     std::vector<void*> values;
-    std::vector<std::vector<void*> > valuesList;
     std::vector<AttrType> valueTypes;
-    std::vector<std::vector<AttrType> > valueTypesList;
     std::vector<Condition> conditionList;
     SetList setList;
     SelectList selectList;

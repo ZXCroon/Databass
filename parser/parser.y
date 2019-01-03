@@ -26,7 +26,6 @@
     IX_Manager ixm(bpm);
     SM_Manager smm(&ixm, &rmm);
     QL_Manager qlm(&smm, &ixm, &rmm);
-    int count = 0;
 %}
 
 %token VALUE_INT VALUE_FLOAT VALUE_STRING
@@ -122,8 +121,9 @@ TbStmt              :   CREATE TABLE IDENTIFIER '(' FieldList ')' ';'
                         {
                             OrderPack pack(OrderPack::INSERT_VALUES);
                             pack.tbname = $3.id;
-                            pack.valuesList = $5.valuesList;
-                            pack.valueTypesList = $5.valueTypesList;
+                            pack.tupleSize = $5.tupleSize;
+                            pack.values = $5.values;
+                            pack.valueTypes = $5.valueTypes;
                             pack.process();
                             prompt();
                         }
@@ -263,23 +263,14 @@ Type                :   TYPE_INT '(' VALUE_INT ')'
 
 ValueLists          :   '(' ValueList ')'
                         {
-                            ++count;
-                            if (count % 1000 == 0) {
-                                printf("parsing %d\n", count);
-                            }
-                            $$.valuesList.clear();
-                            $$.valuesList.push_back($2.values);
-                            $$.valueTypesList.clear();
-                            $$.valueTypesList.push_back($2.valueTypes);
+                            $$.tupleSize = $2.values.size();
+                            $$.values = $2.values;
+                            $$.valueTypes = $2.valueTypes;
                         }
                     |   ValueLists ',' '(' ValueList ')'
                         {
-                            ++count;
-                            if (count % 1000 == 0) {
-                                printf("parsing %d\n", count);
-                            }
-                            $$.valuesList.push_back($4.values);
-                            $$.valueTypesList.push_back($4.valueTypes);
+                            $$.values.insert($$.values.end(), $4.values.begin(), $4.values.end());
+                            $$.valueTypes.insert($$.valueTypes.end(), $4.valueTypes.begin(), $4.valueTypes.end());
                         }
                     ;
 
