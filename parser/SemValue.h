@@ -164,6 +164,7 @@ public:
     SetList setList;
     SelectList selectList;
     std::vector<char*> tableList;
+    JoinType joinType;
     static int keyword(int code);
 };
 

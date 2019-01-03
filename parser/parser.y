@@ -38,6 +38,7 @@
 %token TYPE_INT TYPE_VARCHAR TYPE_FLOAT TYPE_DATE TYPE_CHAR
 %token AND LE GE NE LIKE
 %token INDEX
+%token JOIN INNER OUTER LEFT RIGHT FULL
 
 %left AND
 
@@ -165,20 +166,22 @@ TbStmt              :   CREATE TABLE IDENTIFIER '(' FieldList ')' ';'
                             pack.process();
                             prompt();
                         }
-                    |   SELECT Selector FROM TableList WHERE WhereClause ';'
+                    |   SELECT Selector FROM SelectTableList WHERE WhereClause ';'
                         {
                             OrderPack pack(OrderPack::SELECT_VALUES);
                             pack.selectList = $2.selectList;
                             pack.tableList = $4.tableList;
+                            pack.joinType = $4.joinType;
                             pack.conditionList = $6.conditionList;
                             pack.process();
                             prompt();
                         }
-                    |   SELECT Selector FROM TableList ';'
+                    |   SELECT Selector FROM SelectTableList ';'
                         {
                             OrderPack pack(OrderPack::SELECT_VALUES);
                             pack.selectList = $2.selectList;
                             pack.tableList = $4.tableList;
+                            pack.joinType = $4.joinType;
                             pack.conditionList.clear();
                             pack.process();
                             prompt();
@@ -505,17 +508,72 @@ Selector            :   '*'
                         }
                     ;
 
-TableList           :   IDENTIFIER
+SelectTableList     :   IDENTIFIER
                         {
                             $$.tableList.clear();
                             $$.tableList.push_back($1.id);
+                            $$.joinType = NO_JOIN;
                         }
-                    |   TableList ',' IDENTIFIER
+                    |   IDENTIFIER ',' IDENTIFIER
                         {
-                            $$.tableList = $1.tableList;
+                            std::cout << "HEY" << std::endl;
+                            $$.tableList.clear();
+                            $$.tableList.push_back($1.id);
                             $$.tableList.push_back($3.id);
+                            $$.joinType = INNER_JOIN;
+                        }
+                    |   IDENTIFIER INNER JOIN IDENTIFIER
+                        {
+                            std::cout << "CAO" << std::endl;
+                            $$.tableList.clear();
+                            $$.tableList.push_back($1.id);
+                            $$.tableList.push_back($4.id);
+                            $$.joinType = INNER_JOIN;
+                        }
+                    |   IDENTIFIER FULL JOIN IDENTIFIER
+                        {
+                            $$.tableList.clear();
+                            $$.tableList.push_back($1.id);
+                            $$.tableList.push_back($4.id);
+                            $$.joinType = FULL_JOIN;
+                        }
+                    |   IDENTIFIER FULL OUTER JOIN IDENTIFIER
+                        {
+                            $$.tableList.clear();
+                            $$.tableList.push_back($1.id);
+                            $$.tableList.push_back($5.id);
+                            $$.joinType = FULL_JOIN;
+                        }
+                    |   IDENTIFIER LEFT JOIN IDENTIFIER
+                        {
+                            $$.tableList.clear();
+                            $$.tableList.push_back($1.id);
+                            $$.tableList.push_back($4.id);
+                            $$.joinType = LEFT_JOIN;
+                        }
+                    |   IDENTIFIER LEFT OUTER JOIN IDENTIFIER
+                        {
+                            $$.tableList.clear();
+                            $$.tableList.push_back($1.id);
+                            $$.tableList.push_back($5.id);
+                            $$.joinType = LEFT_JOIN;
+                        }
+                    |   IDENTIFIER RIGHT JOIN IDENTIFIER
+                        {
+                            $$.tableList.clear();
+                            $$.tableList.push_back($1.id);
+                            $$.tableList.push_back($4.id);
+                            $$.joinType = RIGHT_JOIN;
+                        }
+                    |   IDENTIFIER RIGHT OUTER JOIN IDENTIFIER
+                        {
+                            $$.tableList.clear();
+                            $$.tableList.push_back($1.id);
+                            $$.tableList.push_back($5.id);
+                            $$.joinType = RIGHT_JOIN;
                         }
                     ;
+                    
 
 %%
 

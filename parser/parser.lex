@@ -53,6 +53,12 @@ AND ("and"|"AND")
 TYPE_DATE ("DATE")
 TYPE_FLOAT ("float"|"FLOAT")
 FOREIGN ("foreign"|"FOREIGN")
+JOIN ("join"|"JOIN")
+INNER ("inner"|"INNER")
+OUTER ("outer"|"OUTER")
+LEFT ("left"|"LEFT")
+RIGHT ("right"|"RIGHT")
+FULL ("full"|"FULL")
 
 TYPE_CHAR ("char"|"CHAR")
 
@@ -100,6 +106,12 @@ NEWLINE (\r|\n|\r\n)
 {TYPE_DATE}                             { return SemValue::keyword(TYPE_DATE); }
 {TYPE_FLOAT}                            { return SemValue::keyword(TYPE_FLOAT); }
 {FOREIGN}                               { return SemValue::keyword(FOREIGN); }
+{JOIN}                                  { return SemValue::keyword(JOIN); }
+{INNER}                                 { return SemValue::keyword(INNER); }
+{OUTER}                                 { return SemValue::keyword(OUTER); }
+{LEFT}                                  { return SemValue::keyword(LEFT); }
+{RIGHT}                                 { return SemValue::keyword(RIGHT); }
+{FULL}                                  { return SemValue::keyword(FULL); }
 
 {TYPE_CHAR}                             { return SemValue::keyword(TYPE_CHAR); }
 

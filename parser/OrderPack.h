@@ -4,6 +4,7 @@
 #include "SemValue.h"
 #include "unistd.h"
 #include "cstdlib"
+#include "../utils/defs.h"
 
 extern RM_Manager rmm;
 extern IX_Manager ixm;
@@ -47,6 +48,7 @@ public:
     RelAttr updAttr, updRhsAttr;
     Value updValue;
     std::vector<char*> tableList;
+    JoinType joinType;
 };
 
 #endif

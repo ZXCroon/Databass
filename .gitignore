@@ -9,3 +9,6 @@
 *.swp
 
 .DS_Store
+
+parser/lex.yy.c
+parser/parser.tab.*
