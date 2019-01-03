@@ -144,8 +144,72 @@ bool convertToDate(char *value) {
 }
 
 
+bool validate(const char *pData1, const char *pData2, AttrType attrType1, AttrType attrType2,
+              int attrLength1, int attrLength2, CompOp compOp, bool strict) {
+    if (attrType1 == attrType2) {
+        return validate(pData1, attrType1, attrLength1, compOp, pData2);
+    }
+    if (attrType1 == INT && attrType2 == FLOAT) {
+        char *pDatat = new char[attrLength2];
+        *(float *)pDatat = (float)(*(int *)pData1);
+        bool ans = validate(pDatat, FLOAT, attrLength2, compOp, pData2);
+        delete[] pDatat;
+        return ans;
+    }
+    if (attrType1 == FLOAT && attrType2 == INT) {
+        char *pDatat = new char[attrLength1];
+        *(float *)pDatat = (float)(*(int *)pData2);
+        bool ans = validate(pData1, FLOAT, attrLength1, compOp, pDatat);
+        delete[] pDatat;
+        return ans;
+    }
+    if (strict) {
+        Error::condTypeError();
+        return false;
+    }
+    if (attrType1 == DATE && attrType2 == STRING) {
+        char *pDatat = new char[attrLength2];
+        memcpy(pDatat, pData2, attrLength2);
+        if (!convertToDate(pDatat)) {
+            Error::invalidDateError();
+            delete[] pDatat;
+            return false;
+        }
+        bool ans = validate(pData1, DATE, attrLength1, compOp, pDatat);
+        delete[] pDatat;
+        return ans;
+    }
+    if (attrType1 == STRING && attrType2 == DATE) {
+        char *pDatat = new char[attrLength1];
+        memcpy(pDatat, pData1, attrLength1);
+        if (!convertToDate(pDatat)) {
+            Error::invalidDateError();
+            delete[] pDatat;
+            return false;
+        }
+        bool ans = validate(pDatat, DATE, attrLength2, compOp, pData2);
+        delete[] pDatat;
+        return ans;
+    }
+    if (attrType1 == VARSTRING && attrType2 == STRING) {
+        std::string str1(pData1);
+        std::string str2(pData2, attrLength2);
+        str2.erase(str2.find_last_not_of(" ") + 1);
+        return validate(str1.c_str(), VARSTRING, 0, compOp, str2.c_str());
+    }
+    if (attrType1 == STRING && attrType2 == VARSTRING) {
+        std::string str1(pData1, attrLength1);
+        std::string str2(pData2);
+        str1.erase(str1.find_last_not_of(" ") + 1);
+        return validate(str1.c_str(), VARSTRING, 0, compOp, str2.c_str());
+    }
+    Error::condTypeError();
+    return false;
+}
+
+
 bool validate(const char *pData, AttrType attrType, int attrLength,
-                           CompOp compOp, const void *value) {
+              CompOp compOp, const void *value) {
     if (compOp == NO_OP) {
         return true;
     }
@@ -170,9 +234,7 @@ bool validate(const char *pData, AttrType attrType, int attrLength,
             std::string str(pData, attrLength), pattern((char *)value, attrLength);
             str.erase(str.find_last_not_of(" ") + 1);
             pattern.erase(pattern.find_last_not_of(" ") + 1);
-            bool t = checkLike(str, pattern);
-            return t;
-            // return checkLike(str, pattern);
+            return checkLike(str, pattern);
         } else {
             return false;
         }

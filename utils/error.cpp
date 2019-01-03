@@ -2,6 +2,9 @@
 #include <iostream>
 
 
+bool Error::err = false;
+
+
 void Error::typeError(AttrType expected, AttrType actual) {
     head();
     std::cout << "Type mismatch: expected ";
@@ -9,6 +12,12 @@ void Error::typeError(AttrType expected, AttrType actual) {
     std::cout << ", got ";
     printAttrType(actual);
     std::cout << "." << std::endl;
+}
+
+
+void Error::condTypeError() {
+    head();
+    std::cout << "Type mismatch in conditions." << std::endl;
 }
 
 
@@ -47,5 +56,6 @@ void Error::invalidDateError() {
 
 
 void Error::head() {
+    err = true;
     std::cout << "\033[1;31m[ERROR] \033[0m";
 }

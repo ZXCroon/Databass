@@ -238,12 +238,14 @@ bool QL_Manager::singleValidate(const char *relation, const Catalog &cat, int nC
         }
         if (cond.bRhsIsAttr) {
             const AttrcatLayout *ac_ = locateAttrcat(relation, cat, cond.rhsAttr);
-            if (ac_ != NULL && !validate(rec.getData() + ac->offset, ac->attrType, ac->attrLength, cond.op, rec.getData() + ac_->offset)) {
+            if (ac != NULL && !validate(rec.getData() + ac->offset, rec.getData() + ac_->offset,
+                        ac->attrType, ac_->attrType, ac->attrLength, ac_->attrLength, cond.op, true)) {
                 return false;
             }
         }
-        else if (!validate(rec.getData() + ac->offset, ac->attrType, ac->attrLength, cond.op,
-                    padValue(cond.rhsValue.data, ac->attrType, ac->attrLength))) {
+        else if (!validate(rec.getData() + ac->offset, (char *)cond.rhsValue.data,
+                    ac->attrType, cond.rhsValue.type, ac->attrLength,
+                    cond.rhsValue.type == STRING ? strlen((char *)cond.rhsValue.data) : 4, cond.op, false)) {
             return false;
         }
     }
@@ -270,7 +272,8 @@ bool QL_Manager::pairValidate(const char *relation1, const char *relation2,
         const AttrcatLayout *acl = locateAttrcat(relation1, cat1, cond.lhsAttr);
         const AttrcatLayout *acr = locateAttrcat(relation2, cat2, cond.rhsAttr);
         if (acl != NULL && acr != NULL) {
-            if (!validate(rec1.getData() + acl->offset, acl->attrType, acl->attrLength, cond.op, rec2.getData() + acr->offset)) {
+            if (!validate(rec1.getData() + acl->offset, rec2.getData() + acr->offset,
+                        acl->attrType, acr->attrType, acl->attrLength, acr->attrLength, cond.op, true)) {
                 return false;
             }
         }
