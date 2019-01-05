@@ -12,9 +12,9 @@ void yyerror(const char*);
 DIGIT ([0-9])
 NUMBER ({DIGIT}+)
 VALUE_INT ([+\-]?{NUMBER})
-VALUE_STRING ('(\\.|[^'\\])*')
+VALUE_STRING ('(\\.|[^'\\])*'|\"(\\.|[^\"\\])*\")
 
-IDENTIFIER ([A-Za-z][_0-9A-Za-z]*)
+IDENTIFIER ([A-Za-z][_0-9A-Za-z]*|`[A-Za-z][_0-9A-Za-z]*`)
 EXIT ("EXIT"|"exit")
 LE ("<=")
 GE (">=")
@@ -125,8 +125,14 @@ NEWLINE (\r|\n|\r\n)
                                             yylval = SemValue();
                                             yylval.code = IDENTIFIER;
                                             int len = strlen(yytext);
-                                            yylval.id = new char[len + 1];
-                                            memcpy(yylval.id, yytext, len);
+                                            if (yytext[0] == '`') {
+                                                len -= 2;
+                                                yylval.id = new char[len + 1];
+                                                memcpy(yylval.id, yytext + 1, len);
+                                            } else {
+                                                yylval.id = new char[len + 1];
+                                                memcpy(yylval.id, yytext, len);
+                                            }
                                             yylval.id[len] = '\0';
                                             return IDENTIFIER;
                                         }
@@ -155,10 +161,18 @@ NEWLINE (\r|\n|\r\n)
 {VALUE_STRING}                          {
                                             yylval = SemValue();
                                             yylval.code = VALUE_STRING;
-                                            int len = strlen(yytext) - 2;
+                                            std::string text(yytext);
+                                            text = text.substr(1, text.length() - 2);
+                                            int found;
+                                            while ((found = text.find("\\'")) != std::string::npos) {
+                                                text.replace(found, 2, "'");
+                                            }
+                                            while ((found = text.find("\\\"")) != std::string::npos) {
+                                                text.replace(found, 2, "\"");
+                                            }
+                                            int len = text.length();
                                             char *chars = new char[len + 1];
-                                            memcpy(chars, yytext + 1, len);
-                                            chars[len] = '\0';
+                                            strcpy(chars, text.c_str());
                                             yylval.value = (void*)chars;
                                             return VALUE_STRING;
                                         }
