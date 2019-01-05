@@ -157,6 +157,9 @@ void OrderPack::process() {
             for (int i = 0; i < len; ++i) {
                 selAttrs[i] = selectList.attrList[i];
             }
+            if (selectList.selectType == SelectList::AGGREGATE) {
+                len = -2 - aggType;
+            }
             printf("DEBUG: start selecting\n");
             qlm.select(len, selAttrs, relation1, relation2, joinType, size, conditions);
             printf("DEBUG: finish selecting\n");

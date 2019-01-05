@@ -1,5 +1,6 @@
 #include <cstring>
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 #include "utils.h"
 #include "defs.h"
@@ -310,7 +311,7 @@ void print(const void *value, AttrType attrType, int attrLength) {
         std::cout << *(int *)value;
         break;
     case FLOAT:
-        std::cout << *(float *)value;
+        std::cout << std::fixed << std::setprecision(2) << *(float *)value;
         break;
     case STRING: {
         std::string str = std::string((char *)value, attrLength);

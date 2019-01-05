@@ -49,6 +49,23 @@ struct SelectStrategy {
 };
 
 
+class QL_Aggregator {
+
+public:
+    QL_Aggregator(AttrType attrType, AggType aggType);
+    void update(void *value);
+    void getResult(char *buf, AttrType &attrType);
+
+private:
+    AttrType attrType;
+    AggType aggType;
+    int tmpi;
+    float tmpf;
+    int cnt;
+
+};
+
+
 class QL_Manager {
 
 public:

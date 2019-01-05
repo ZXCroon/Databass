@@ -59,6 +59,11 @@ OUTER ("outer"|"OUTER")
 LEFT ("left"|"LEFT")
 RIGHT ("right"|"RIGHT")
 FULL ("full"|"FULL")
+AVG ("avg"|"AVG")
+SUM ("sum"|"SUM")
+MIN ("min"|"MIN")
+MAX ("max"|"MAX")
+COUNT ("count"|"COUNT")
 
 TYPE_CHAR ("char"|"CHAR")
 
@@ -112,6 +117,11 @@ NEWLINE (\r|\n|\r\n)
 {LEFT}                                  { return SemValue::keyword(LEFT); }
 {RIGHT}                                 { return SemValue::keyword(RIGHT); }
 {FULL}                                  { return SemValue::keyword(FULL); }
+{AVG}                                   { return SemValue::keyword(AVG); }
+{SUM}                                   { return SemValue::keyword(SUM); }
+{MIN}                                   { return SemValue::keyword(MIN); }
+{MAX}                                   { return SemValue::keyword(MAX); }
+{COUNT}                                 { return SemValue::keyword(COUNT); }
 
 {TYPE_CHAR}                             { return SemValue::keyword(TYPE_CHAR); }
 

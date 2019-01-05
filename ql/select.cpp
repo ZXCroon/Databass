@@ -3,12 +3,80 @@
 #include <vector>
 
 
+QL_Aggregator::QL_Aggregator(AttrType attrType, AggType aggType) : attrType(attrType), aggType(aggType),
+        tmpi(0), tmpf(0), cnt(0) {}
+
+
+void QL_Aggregator::update(void *value) {
+    if (attrType == INT) {
+        int v = *(int *)value;
+        if (aggType == AVG_AGG || aggType == SUM_AGG) {
+            tmpi += v;
+        } else {
+            if (cnt == 0) {
+                tmpi = v;
+            }
+            if (aggType == MIN_AGG) {
+                tmpi = min(tmpi, v);
+            } else if (aggType == MAX_AGG) {
+                tmpi = max(tmpi, v);
+            } else throw;
+        }
+    } else if (attrType == FLOAT) {
+        float v = *(float *)value;
+        if (aggType == AVG_AGG || aggType == SUM_AGG) {
+            tmpf += v;
+        } else {
+            if (cnt == 0) {
+                tmpf = v;
+            }
+            if (aggType == MIN_AGG) {
+                tmpf = min(tmpf, v);
+            } else if (aggType == MAX_AGG) {
+                tmpf = max(tmpf, v);
+            } else throw;
+        }
+    } else throw;
+    ++cnt;
+}
+
+
+void QL_Aggregator::getResult(char *buf, AttrType &attrType) {
+    if (aggType == AVG_AGG) {
+        if (this->attrType == FLOAT) {
+            attrType = FLOAT;
+            *(float *)buf = tmpf / cnt;
+        } else {
+            if (tmpi % cnt == 0) {
+                attrType = INT;
+                *(int *)buf = tmpi / cnt;
+            } else {
+                attrType = FLOAT;
+                *(float *)buf = float(tmpi) / cnt;
+            }
+        }
+    } else {
+        attrType = this->attrType;
+        if (attrType == INT) {
+            *(int *)buf = tmpi;
+        } else {
+            *(float *)buf = tmpf;
+        }
+    }
+}
+
+
 typedef std::pair<RID, RID> PRID;
 
 
 RC QL_Manager::select(int nSelAttrs, const RelAttr selAttrs[],
                       const char* relation1, const char *relation2, JoinType joinType,
                       int nConditions, const Condition conditions[]) {
+    AggType aggType = NO_AGG;
+    if (nSelAttrs <= -2) {
+        aggType = -2 - nSelAttrs;
+        nSelAttrs = (aggType == COUNT_AGG ? 0 : 1);
+    }
 
     Catalog cat1, cat2;
     if (!getCatalog(relation1, cat1)) {
@@ -23,6 +91,18 @@ RC QL_Manager::select(int nSelAttrs, const RelAttr selAttrs[],
         if (locateAttrcat(relation1, cat1, selAttrs[i]) == NULL &&
                 (joinType == NO_JOIN || locateAttrcat(relation2, cat2, selAttrs[i]) == NULL)) {
             return QL_NO_SUCH_ATTRIBUTE;
+        }
+    }
+    if (aggType != NO_AGG && aggType != COUNT_AGG) {
+        const AttrcatLayout *ac1 = locateAttrcat(relation1, cat1, selAttrs[0]);
+        AggType type1 = (ac1 == NULL ? INT : ac1->attrType);
+        const AttrcatLayout *ac2 = NULL;
+        if (joinType != NO_JOIN) {
+            ac2 = locateAttrcat(relation2, cat2, selAttrs[0]);
+        }
+        AggType type2 = (ac2 == NULL ? INT : ac2->attrType);
+        if ((type1 != INT && type1 != FLOAT) || (type2 != INT && type2 != FLOAT)) {
+            // TODO
         }
     }
 
@@ -150,7 +230,7 @@ RC QL_Manager::select(int nSelAttrs, const RelAttr selAttrs[],
     RelAttr *selAttrs__;
     int nSelAttrs_ = nSelAttrs;
     // SELECT *
-    if (nSelAttrs < 0) {
+    if (nSelAttrs == -1) {
         if (joinType == NO_JOIN) {
             nSelAttrs_ = cat1.relcat.attrCount;
             selAttrs__ = new RelAttr[nSelAttrs_];
@@ -174,23 +254,60 @@ RC QL_Manager::select(int nSelAttrs, const RelAttr selAttrs[],
     }
     // output
     std::cout << "|";
-    for (int i = 0; i < nSelAttrs_; ++i) {
-        std::cout << " ";
-        print(selAttrs_[i].attrName, VARSTRING, MAXNAME + 1);
-        std::cout << " |";
+    if (aggType == COUNT_AGG) {
+        std::cout << " COUNT(*) |";
+    } else if (aggType != NO_AGG) {
+        switch (aggType) {
+        case AVG_AGG:
+            std::cout << " AVG(";
+            break;
+        case MIN_AGG:
+            std::cout << " MIN(";
+            break;
+        case MAX_AGG:
+            std::cout << " MAX(";
+            break;
+        }
+        print(selAttrs_[0].attrName, VARSTRING, MAXNAME + 1);
+        std::cout << ") |";
+    } else {
+        for (int i = 0; i < nSelAttrs_; ++i) {
+            std::cout << " ";
+            print(selAttrs_[i].attrName, VARSTRING, MAXNAME + 1);
+            std::cout << " |";
+        }
     }
     std::cout << std::endl;
     if (joinType == NO_JOIN) {
-        for (int i = 0; i < rids.size(); ++i) {
-            std::cout << "|";
-            handle1->getRec(rids[i], rec);
-            for (int j = 0; j < nSelAttrs_; ++j) {
-                const AttrcatLayout *ac = locateAttrcat(relation1, cat1, selAttrs_[j]);
-                std::cout << " ";
-                print(rec.getData() + ac->offset, ac->attrType, ac->attrLength);
-                std::cout << " |";
+        if (aggType == COUNT_AGG) {
+            std::cout << "| " << rids.size() << " |" << std::endl;
+        } else {
+            if (aggType == NO_AGG) {
+                for (int i = 0; i < rids.size(); ++i) {
+                    std::cout << "|";
+                    handle1->getRec(rids[i], rec);
+                    for (int j = 0; j < nSelAttrs_; ++j) {
+                        const AttrcatLayout *ac = locateAttrcat(relation1, cat1, selAttrs_[j]);
+                        std::cout << " ";
+                        print(rec.getData() + ac->offset, ac->attrType, ac->attrLength);
+                        std::cout << " |";
+                    }
+                    std::cout << std::endl;
+                }
+            } else {
+                const AttrcatLayout *ac = locateAttrcat(relation1, cat1, selAttrs_[0]);
+                QL_Aggregator aggregator(ac->attrType, aggType);
+                for (int i = 0; i < rids.size(); ++i) {
+                    handle1->getRec(rids[i], rec);
+                    aggregator.update(rec.getData() + ac->offset);
+                }
+                char aggBuf[10];
+                AttrType aggAttrType;
+                aggregator.getResult(aggBuf, aggAttrType);
+                std::cout << "| ";
+                print(aggBuf, aggAttrType, 4);
+                std::cout << " |" << std::endl;
             }
-            std::cout << std::endl;
         }
     } else {
         for (int i = 0; i < prids.size(); ++i) {
@@ -222,7 +339,7 @@ RC QL_Manager::select(int nSelAttrs, const RelAttr selAttrs[],
     if (joinType != NO_JOIN) {
         rmm->closeFile(*handle2);
     }
-    if (nSelAttrs < 0) {
+    if (nSelAttrs == -1) {
         delete[] selAttrs_;
     }
     return 0;

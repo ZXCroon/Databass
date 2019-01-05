@@ -39,6 +39,7 @@
 %token AND LE GE NE LIKE
 %token INDEX
 %token JOIN INNER OUTER LEFT RIGHT FULL
+%token AVG SUM MIN MAX COUNT
 
 %left AND
 
@@ -170,6 +171,19 @@ TbStmt              :   CREATE TABLE IDENTIFIER '(' FieldList ')' ';'
                         {
                             OrderPack pack(OrderPack::SELECT_VALUES);
                             pack.selectList = $2.selectList;
+                            pack.aggType = NO_AGG;
+                            pack.tableList = $4.tableList;
+                            pack.joinType = $4.joinType;
+                            pack.conditionList = $6.conditionList;
+                            pack.process();
+                            prompt();
+                        }
+                    |   SELECT AggSelector FROM SelectTableList WHERE WhereClause ';'
+                        {
+                            OrderPack pack(OrderPack::SELECT_VALUES);
+                            pack.selectList = $2.selectList;
+                            pack.selectList.selectType = SelectList::AGGREGATE;
+                            pack.aggType = $2.aggType;
                             pack.tableList = $4.tableList;
                             pack.joinType = $4.joinType;
                             pack.conditionList = $6.conditionList;
@@ -180,6 +194,19 @@ TbStmt              :   CREATE TABLE IDENTIFIER '(' FieldList ')' ';'
                         {
                             OrderPack pack(OrderPack::SELECT_VALUES);
                             pack.selectList = $2.selectList;
+                            pack.aggType = NO_AGG;
+                            pack.tableList = $4.tableList;
+                            pack.joinType = $4.joinType;
+                            pack.conditionList.clear();
+                            pack.process();
+                            prompt();
+                        }
+                    |   SELECT AggSelector FROM SelectTableList ';'
+                        {
+                            OrderPack pack(OrderPack::SELECT_VALUES);
+                            pack.selectList = $2.selectList;
+                            pack.selectList.selectType = SelectList::AGGREGATE;
+                            pack.aggType = $2.aggType;
                             pack.tableList = $4.tableList;
                             pack.joinType = $4.joinType;
                             pack.conditionList.clear();
@@ -507,6 +534,36 @@ Selector            :   '*'
                             $$.selectList.add($3.tbname, $3.colname);
                         }
                     ;
+
+AggSelector         :   AVG '(' Col ')'
+                        {
+                            $$.selectList.clear();
+                            $$.selectList.add($3.tbname, $3.colname);
+                            $$.aggType = AVG_AGG;
+                        }
+                    |   SUM '(' Col ')'
+                        {
+                            $$.selectList.clear();
+                            $$.selectList.add($3.tbname, $3.colname);
+                            $$.aggType = SUM_AGG;
+                        }
+                    |   MIN '(' Col ')'
+                        {
+                            $$.selectList.clear();
+                            $$.selectList.add($3.tbname, $3.colname);
+                            $$.aggType = MIN_AGG;
+                        }
+                    |   MAX '(' Col ')'
+                        {
+                            $$.selectList.clear();
+                            $$.selectList.add($3.tbname, $3.colname);
+                            $$.aggType = MAX_AGG;
+                        }
+                    |   COUNT '(' '*' ')'
+                        {
+                            $$.selectList.clear();
+                            $$.aggType = COUNT_AGG;
+                        }
 
 SelectTableList     :   IDENTIFIER
                         {
