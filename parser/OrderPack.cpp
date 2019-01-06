@@ -141,12 +141,6 @@ void OrderPack::process() {
         Condition conditions[size];
         for (int i = 0; i < size; ++i) {
             conditions[i] = conditionList[i];
-            if (conditions[i].lhsAttr.attrName != NULL && conditions[i].lhsAttr.relName == NULL) {
-                conditions[i].lhsAttr.relName = tbname;
-            }
-            if (conditions[i].rhsAttr.attrName != NULL && conditions[i].rhsAttr.relName == NULL) {
-                conditions[i].rhsAttr.relName = tbname;
-            }
         }
         if (selectList.selectType == SelectList::ALL) {
             qlm.select(-1, NULL, relation1, relation2, joinType, size, conditions);
