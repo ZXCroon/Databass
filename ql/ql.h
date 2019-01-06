@@ -102,6 +102,7 @@ private:
     RM_Manager *rmm;
     // char *dbName;
     char valDataBuf[MAXSTRINGLEN + 1];
+    char nullBuf[MAXSTRINGLEN + 1];
     Value valBuf;
     char pathBuf[MAXNAME * 2 + 10];
 };

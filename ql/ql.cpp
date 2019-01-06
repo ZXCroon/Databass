@@ -5,7 +5,9 @@
 
 
 QL_Manager::QL_Manager(SM_Manager *smm, IX_Manager *ixm, RM_Manager *rmm) :
-        smm(smm), ixm(ixm), rmm(rmm), valBuf(Value{INT, valDataBuf}) {}
+        smm(smm), ixm(ixm), rmm(rmm), valBuf(Value{INT, valDataBuf}) {
+    memset(nullBuf, NULL_BYTE, sizeof(nullBuf));
+}
 
 
 QL_Manager::~QL_Manager() {}
@@ -285,13 +287,13 @@ bool QL_Manager::filterValue(Value &value, const AttrcatLayout *attrcat, bool in
         }
         valBuf.type = value.type;
     }
-    Value  &value_ = in_place ? value : valBuf;
+    Value &value_ = in_place ? value : valBuf;
     if (value_.data == NULL) {
         if ((attrcat->constrFlag & 3) != 0) {
             Error::nullError(attrcat->attrName);
             return false;
         }
-        memset(value_.data, NULL_BYTE, attrcat->attrLength);
+        value_.data = nullBuf;
         value_.type = attrcat->attrType;
         return true;
     }
