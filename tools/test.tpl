@@ -1,5 +1,7 @@
 {%- macro print_value(value) -%}
-{%- if not value is number -%}
+{%- if value is none -%}
+NULL
+{%- elif not value is number -%}
 "{{ value }}"
 {%- else -%}
 {{ value }}

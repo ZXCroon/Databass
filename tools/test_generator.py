@@ -4,10 +4,6 @@ import argparse
 import jinja2
 
 
-TYPES = ('INT', 'FLOAT', 'CHAR', 'VARCHAR', 'DATE')
-COMPOP = ('=', '<', '>', '<=', '>=', '<>')
-
-
 def generate_str(max_len=10):
     l = random.randint(1, max_len)
     ret = ''.join([chr(random.randint(32, 127)) for _ in range(l)])
@@ -36,6 +32,7 @@ def generate_range(max_digits=8):
 
 
 def generate_column():
+    TYPES = ('INT', 'FLOAT', 'CHAR', 'VARCHAR', 'DATE')
     ty = random.choice(TYPES)
     name = generate_identifier()
     ret = {'type': ty, 'name': name}
@@ -55,7 +52,9 @@ def generate_table_info(max_columns=40):
     return table_info, generate_identifier()
 
 
-def generate_value(column):
+def generate_value(column, null_ratio=0.01):
+    if random.random() < null_ratio:
+        return None
     if column['type'] == 'INT':
         return (random.randint(*column['range'])) * random.choice((-1, 1))
     elif column['type'] == 'FLOAT':
@@ -68,10 +67,18 @@ def generate_value(column):
         raise
 
 
-def generate_condition(table_info):
+def generate_condition(table_info, null_ratio=0.01):
     col = random.choice(table_info)
-    comp_op = random.choice(COMPOP)
-    pivot = generate_value(col)
+    if random.random() < null_ratio:
+        comp_op = ' IS '
+        pivot = None
+    else:
+        COMPOP = ('=', '<', '>', '<=', '>=', '<>', ' IS NOT ')
+        comp_op = random.choice(COMPOP)
+        if comp_op == ' IS NOT ':
+            pivot = None
+        else:
+            pivot = generate_value(col)
     return {'name': col['name'], 'comp_op': comp_op, 'pivot': pivot}
 
 
