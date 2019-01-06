@@ -180,6 +180,9 @@ NEWLINE (\r|\n|\r\n)
                                             while ((found = text.find("\\\"")) != std::string::npos) {
                                                 text.replace(found, 2, "\"");
                                             }
+                                            while ((found = text.find("\\\\")) != std::string::npos) {
+                                                text.replace(found, 2, "\\");
+                                            }
                                             int len = text.length();
                                             char *chars = new char[len + 1];
                                             strcpy(chars, text.c_str());

@@ -269,6 +269,11 @@ Type                :   TYPE_INT '(' VALUE_INT ')'
                             $$.attrType = INT;
                             $$.attrLength = 4;
                         }
+                    |   TYPE_INT
+                        {
+                            $$.attrType = INT;
+                            $$.attrLength = 4;
+                        }
                     |   TYPE_VARCHAR '(' VALUE_INT ')'
                         {
                             $$.attrType = VARSTRING;
