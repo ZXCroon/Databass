@@ -115,7 +115,7 @@ void OrderPack::process() {
             }
         }
         printf("DEBUG: start updating\n");
-        qlm.update(tbname, updAttr, (updValue.data != NULL), updRhsAttr, updValue, size, conditions);
+        qlm.update(tbname, updAttr, (updValue.data != NULL || updValue.type == NULL_TYPE), updRhsAttr, updValue, size, conditions);
         printf("DEBUG: finish updating\n");
         break;
     }
