@@ -168,9 +168,9 @@ bool validate(const char *pData1, const char *pData2, AttrType attrType1, AttrTy
         Error::condTypeError();
         return false;
     }
-    if (attrType1 == DATE && attrType2 == STRING) {
-        char *pDatat = new char[attrLength2];
-        memcpy(pDatat, pData2, attrLength2);
+    if (attrType1 == DATE && attrType2 == VARSTRING) {
+        char *pDatat = new char[attrLength2 + 1];
+        memcpy(pDatat, pData2, attrLength2 + 1);
         if (!convertToDate(pDatat)) {
             Error::invalidDateError();
             delete[] pDatat;
@@ -180,9 +180,9 @@ bool validate(const char *pData1, const char *pData2, AttrType attrType1, AttrTy
         delete[] pDatat;
         return ans;
     }
-    if (attrType1 == STRING && attrType2 == DATE) {
-        char *pDatat = new char[attrLength1];
-        memcpy(pDatat, pData1, attrLength1);
+    if (attrType1 == VARSTRING && attrType2 == DATE) {
+        char *pDatat = new char[attrLength1 + 1];
+        memcpy(pDatat, pData1, attrLength1 + 1);
         if (!convertToDate(pDatat)) {
             Error::invalidDateError();
             delete[] pDatat;
@@ -195,6 +195,7 @@ bool validate(const char *pData1, const char *pData2, AttrType attrType1, AttrTy
     if (attrType1 == VARSTRING && attrType2 == STRING) {
         std::string str1(pData1);
         std::string str2(pData2, attrLength2);
+        str1.erase(str1.find_last_not_of(" ") + 1);
         str2.erase(str2.find_last_not_of(" ") + 1);
         return validate(str1.c_str(), VARSTRING, 0, compOp, str2.c_str());
     }
@@ -202,6 +203,7 @@ bool validate(const char *pData1, const char *pData2, AttrType attrType1, AttrTy
         std::string str1(pData1, attrLength1);
         std::string str2(pData2);
         str1.erase(str1.find_last_not_of(" ") + 1);
+        str2.erase(str2.find_last_not_of(" ") + 1);
         return validate(str1.c_str(), VARSTRING, 0, compOp, str2.c_str());
     }
     Error::condTypeError();

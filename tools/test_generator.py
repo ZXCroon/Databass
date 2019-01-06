@@ -95,24 +95,27 @@ def generate_update(table_info, table_name):
 
 
 def generate_select_count(table_info, table_name):
-    return {'command': 'select count', 'table': table_name, 'conditions': generate_conditions(table_info, max_conditions=1)}
+    return {'command': 'select count', 'table': table_name, 'conditions': generate_conditions(table_info, max_conditions=3)}
 
 
-def generate_test(n_commands, max_columns, n_tables=2):
+def generate_test(args, delete_ratio=0.01):
     commands = []
     db = generate_identifier()
     commands.append({'command': 'drop database', 'database': db})
     commands.append({'command': 'create database', 'database': db})
     commands.append({'command': 'use', 'database': db})
 
-    tables = [generate_table_info(max_columns) for _ in range(n_tables)]
+    tables = [generate_table_info(args.max_columns) for _ in range(args.n_tables)]
     for table in tables:
         commands.append({'command': 'create table', 'table': table})
 
-    for _ in range(n_commands):
-        commands.append(random.choice((generate_insert, generate_delete, generate_update))(*random.choice(tables)))
+    for _ in range(args.n_commands):
+        if random.random() < delete_ratio:
+            commands.append(generate_delete(*random.choice(tables)))
+        else:
+            commands.append(random.choice((generate_insert, generate_update))(*random.choice(tables)))
 
-    for _ in range(3):
+    for _ in range(args.n_counts):
         commands.append(generate_select_count(*random.choice(tables)))
 
     return commands
@@ -122,9 +125,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('output', type=str)
     parser.add_argument('-n', dest='n_commands', type=int, default=100)
+    parser.add_argument('--n_tables', type=int, default=2);
+    parser.add_argument('--n_counts', type=int, default=3);
     parser.add_argument('--max_columns', type=int, default=40)
     args = parser.parse_args()
 
-    commands = generate_test(args.n_commands, args.max_columns)
+    commands = generate_test(args)
     tpl = jinja2.Template(open('test.tpl', 'r').read())
     open(args.output, 'w').write(tpl.render(commands=commands))

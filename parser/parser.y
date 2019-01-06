@@ -331,7 +331,7 @@ Value               :   VALUE_INT
                     |   VALUE_STRING
                         {
                             $$.value = $1.value;
-                            $$.attrType = STRING;
+                            $$.attrType = VARSTRING;
                         }
                     |   VALUE_FLOAT
                         {

@@ -129,8 +129,11 @@ RC QL_Manager::select(int nSelAttrs, const RelAttr selAttrs[],
         std::vector<RID> rids1, rids2;
         if (strat.strat1.attrcat != NULL) {
             ixm->openIndex(getPath(smm->dbName, relation1), strat.strat1.attrcat->indexNo, ixHandle1);
-            indexScan.openScan(*ixHandle1, strat.strat1.compOp,
-                    padValue(strat.strat1.value.data, strat.strat1.attrcat->attrType, strat.strat1.attrcat->attrLength));
+            if (!filterValue(strat.strat1.value, strat.strat1.attrcat, false)) {
+                Error::condTypeError();
+                return 0;
+            }
+            indexScan.openScan(*ixHandle1, strat.strat1.compOp, valBuf.data);
             while (true) {
                 RC rc = indexScan.getNextEntry(rid);
                 if (rc == IX_INDEXSCAN_EOF) {
@@ -161,8 +164,11 @@ RC QL_Manager::select(int nSelAttrs, const RelAttr selAttrs[],
         if (joinType != NO_JOIN) {
             if (strat.strat2.attrcat != NULL) {
                 ixm->openIndex(getPath(smm->dbName, relation2), strat.strat2.attrcat->indexNo, ixHandle2);
-                indexScan.openScan(*ixHandle2, strat.strat2.compOp,
-                        padValue(strat.strat2.value.data, strat.strat2.attrcat->attrType, strat.strat2.attrcat->attrLength));
+                if (!filterValue(strat.strat2.value, strat.strat2.attrcat, false)) {
+                    Error::condTypeError();
+                    return 0;
+                }
+                indexScan.openScan(*ixHandle2, strat.strat2.compOp, valBuf.data);
                 while (true) {
                     RC rc = indexScan.getNextEntry(rid);
                     if (rc == IX_INDEXSCAN_EOF) {
@@ -362,7 +368,7 @@ bool QL_Manager::singleValidate(const char *relation, const Catalog &cat, int nC
         }
         else if (!validate(rec.getData() + ac->offset, (char *)cond.rhsValue.data,
                     ac->attrType, cond.rhsValue.type, ac->attrLength,
-                    cond.rhsValue.type == STRING ? strlen((char *)cond.rhsValue.data) : 4, cond.op, false)) {
+                    cond.rhsValue.type == VARSTRING ? strlen((char *)cond.rhsValue.data) : 4, cond.op, false)) {
             return false;
         }
     }

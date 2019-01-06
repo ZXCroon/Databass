@@ -85,7 +85,6 @@ private:
     bool getCatalog(const char *relName, Catalog &cat);
     const AttrcatLayout *locateAttrcat(const char *relName, const Catalog &cat, const RelAttr &ra);
     char *getPath(const char *dbName, const char *relName);
-    void *padValue(void *value, AttrType attrType, int attrLength);
     bool decideStrategy(const char *relation1, const char *relation2,
                         const Catalog &cat1, const Catalog &cat2, const JoinType &joinType,
                         int nConditions, const Condition conditions[], SelectStrategy &strat);
@@ -94,7 +93,7 @@ private:
                       const Catalog &cat1, const Catalog &cat2,
                       int nConditions, const Condition *conditions,
                       const RM_Record &rec1, const RM_Record &rec2);
-    bool filterValue(Value &value, const AttrcatLayout *attrcat);
+    bool filterValue(Value &value, const AttrcatLayout *attrcat, bool in_place = true);
     bool checkUnique(Value &value, const AttrcatLayout *attrcat, RM_FileHandle *handle);
     bool checkReference(Value &value, const AttrcatLayout *attrcat);
 
@@ -102,7 +101,8 @@ private:
     IX_Manager *ixm;
     RM_Manager *rmm;
     // char *dbName;
-    char valBuf[MAXSTRINGLEN];
+    char valDataBuf[MAXSTRINGLEN + 1];
+    Value valBuf;
     char pathBuf[MAXNAME * 2 + 10];
 };
 
