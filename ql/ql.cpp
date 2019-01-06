@@ -291,6 +291,7 @@ bool QL_Manager::filterValue(Value &value, const AttrcatLayout *attrcat, bool in
             Error::nullError(attrcat->attrName);
             return false;
         }
+        memset(value_.data, NULL_BYTE, attrcat->attrLength);
         value_.type = attrcat->attrType;
         return true;
     }
