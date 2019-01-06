@@ -50,6 +50,18 @@ const int FULL_JOIN = 4;
 
 
 //
+// Aggregate Function Types
+//
+typedef int AggType;
+const int NO_AGG = 0;
+const int AVG_AGG = 1;
+const int SUM_AGG = 2;
+const int MIN_AGG = 3;
+const int MAX_AGG = 4;
+const int COUNT_AGG = 5;
+
+
+//
 // Return Codes
 //
 typedef int RC;

@@ -12,9 +12,9 @@ void yyerror(const char*);
 DIGIT ([0-9])
 NUMBER ({DIGIT}+)
 VALUE_INT ([+\-]?{NUMBER})
-VALUE_STRING ('(\\.|[^'\\])*')
+VALUE_STRING ('(\\.|[^'\\])*'|\"(\\.|[^\"\\])*\")
 
-IDENTIFIER ([A-Za-z][_0-9A-Za-z]*)
+IDENTIFIER ([A-Za-z][_0-9A-Za-z]*|`[A-Za-z][_0-9A-Za-z]*`)
 EXIT ("EXIT"|"exit")
 LE ("<=")
 GE (">=")
@@ -59,6 +59,11 @@ OUTER ("outer"|"OUTER")
 LEFT ("left"|"LEFT")
 RIGHT ("right"|"RIGHT")
 FULL ("full"|"FULL")
+AVG ("avg"|"AVG")
+SUM ("sum"|"SUM")
+MIN ("min"|"MIN")
+MAX ("max"|"MAX")
+COUNT ("count"|"COUNT")
 
 TYPE_CHAR ("char"|"CHAR")
 
@@ -112,6 +117,11 @@ NEWLINE (\r|\n|\r\n)
 {LEFT}                                  { return SemValue::keyword(LEFT); }
 {RIGHT}                                 { return SemValue::keyword(RIGHT); }
 {FULL}                                  { return SemValue::keyword(FULL); }
+{AVG}                                   { return SemValue::keyword(AVG); }
+{SUM}                                   { return SemValue::keyword(SUM); }
+{MIN}                                   { return SemValue::keyword(MIN); }
+{MAX}                                   { return SemValue::keyword(MAX); }
+{COUNT}                                 { return SemValue::keyword(COUNT); }
 
 {TYPE_CHAR}                             { return SemValue::keyword(TYPE_CHAR); }
 
@@ -125,8 +135,14 @@ NEWLINE (\r|\n|\r\n)
                                             yylval = SemValue();
                                             yylval.code = IDENTIFIER;
                                             int len = strlen(yytext);
-                                            yylval.id = new char[len + 1];
-                                            memcpy(yylval.id, yytext, len);
+                                            if (yytext[0] == '`') {
+                                                len -= 2;
+                                                yylval.id = new char[len + 1];
+                                                memcpy(yylval.id, yytext + 1, len);
+                                            } else {
+                                                yylval.id = new char[len + 1];
+                                                memcpy(yylval.id, yytext, len);
+                                            }
                                             yylval.id[len] = '\0';
                                             return IDENTIFIER;
                                         }
@@ -155,10 +171,18 @@ NEWLINE (\r|\n|\r\n)
 {VALUE_STRING}                          {
                                             yylval = SemValue();
                                             yylval.code = VALUE_STRING;
-                                            int len = strlen(yytext) - 2;
+                                            std::string text(yytext);
+                                            text = text.substr(1, text.length() - 2);
+                                            int found;
+                                            while ((found = text.find("\\'")) != std::string::npos) {
+                                                text.replace(found, 2, "'");
+                                            }
+                                            while ((found = text.find("\\\"")) != std::string::npos) {
+                                                text.replace(found, 2, "\"");
+                                            }
+                                            int len = text.length();
                                             char *chars = new char[len + 1];
-                                            memcpy(chars, yytext + 1, len);
-                                            chars[len] = '\0';
+                                            strcpy(chars, text.c_str());
                                             yylval.value = (void*)chars;
                                             return VALUE_STRING;
                                         }

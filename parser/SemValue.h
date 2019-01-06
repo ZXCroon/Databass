@@ -129,6 +129,7 @@ class SelectList {
 public:
     enum SelectType {
         ALL,
+        AGGREGATE,
         NORMAL
     };
     void clear() {
@@ -165,6 +166,7 @@ public:
     SelectList selectList;
     std::vector<char*> tableList;
     JoinType joinType;
+    AggType aggType;
     static int keyword(int code);
 };
 

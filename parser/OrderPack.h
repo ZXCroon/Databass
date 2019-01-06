@@ -49,6 +49,7 @@ public:
     Value updValue;
     std::vector<char*> tableList;
     JoinType joinType;
+    AggType aggType;
 };
 
 #endif
