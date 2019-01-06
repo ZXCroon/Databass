@@ -31,6 +31,7 @@ const int LIKE_OP = 11;
 // Attribute Types
 //
 typedef int AttrType;
+const int NULL_TYPE = -1;
 const int INT = 0;
 const int FLOAT = 1;
 const int STRING = 2;
