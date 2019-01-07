@@ -23,7 +23,7 @@ IX_IndexHandle::~IX_IndexHandle() {}
 bool IX_IndexHandle::insertEntry(void *pData, const RID &rid) {
     //todo check if not an open index
     if (isDebug) {
-        printf("%d %d\n", rid.getPageNum(), rid.getSlotNum());
+        printf("DEBUG insert value:%d %d %d\n", *(int*)pData, rid.getPageNum(), rid.getSlotNum());
     }
     if (root.getPageNum() == -1 && root.getSlotNum() == -1) {
         char *tempData = new char[recordSize];

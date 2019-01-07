@@ -2,6 +2,7 @@
 #include "../utils/utils.h"
 #include <vector>
 
+extern bool isDebug;
 
 QL_Aggregator::QL_Aggregator(AttrType attrType, AggType aggType) : attrType(attrType), aggType(aggType),
         tmpi(0), tmpf(0), cnt(0) {}

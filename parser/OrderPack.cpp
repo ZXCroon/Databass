@@ -159,6 +159,10 @@ void OrderPack::process() {
         Condition conditions[size];
         for (int i = 0; i < size; ++i) {
             conditions[i] = conditionList[i];
+            if (isDebug) {
+                printf("DEBUG before select %d\n", conditions[i].op);
+                printf("DEBUG before select %d\n", *((int*)(conditions[i].rhsValue.data)));
+            }
         }
         if (selectList.selectType == SelectList::ALL) {
             qlm.select(-1, NULL, relation1, relation2, joinType, size, conditions);
