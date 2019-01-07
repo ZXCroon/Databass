@@ -16,6 +16,8 @@
     void yyerror(const char*);
     void prompt();
     bool isCmd = true;
+    bool isDebug = true;
+    int lineNo = 0;
     int yylex(void);
     extern FILE *yyin;
     extern int yyparse();
@@ -50,9 +52,33 @@ Program             :   Program Stmt
                     ;
 
 Stmt                :   SysStmt
+                        {
+                            if (isDebug) {
+                                printf("DEBUG: cmd finished %d\n", lineNo);
+                            }
+                            ++lineNo;
+                        }
                     |   DbStmt
+                        {
+                            if (isDebug) {
+                                printf("DEBUG: cmd finished %d\n", lineNo);
+                            }
+                            ++lineNo;
+                        }
                     |   TbStmt
+                        {
+                            if (isDebug) {
+                                printf("DEBUG: cmd finished %d\n", lineNo);
+                            }
+                            ++lineNo;
+                        }
                     |   IdxStmt
+                        {
+                            if (isDebug) {
+                                printf("DEBUG: cmd finished %d\n", lineNo);
+                            }
+                            ++lineNo;
+                        }
                     ;
 
 SysStmt             :   SHOW DATABASES ';'

@@ -1,5 +1,7 @@
 #include "OrderPack.h"
 
+extern bool isDebug;
+
 void OrderPack::process() {
     switch (type) {
 
@@ -13,13 +15,17 @@ void OrderPack::process() {
     }
 
     case CREATE_DATABASE: {
-        printf("DEBUG: CREATE %s\n", dbname);
+        if (isDebug) {
+            printf("DEBUG: CREATE %s\n", dbname);
+        }
         smm.createDb(dbname);
         break;
     }
 
     case DROP_DATABASE: {
-        printf("DEBUG: DROP %s\n", dbname);
+        if (isDebug) {
+            printf("DEBUG: DROP %s\n", dbname);
+        }
         smm.dropDb(dbname);
         break;
     }
@@ -72,7 +78,9 @@ void OrderPack::process() {
 
     case INSERT_VALUES: {
         int size = values.size() / tupleSize;
-        printf("DEBUG: INSERT %d %d\n", size, tupleSize);
+        if (isDebug) {
+            printf("DEBUG: INSERT %d %d\n", size, tupleSize);
+        }
         for (int i = 0; i < size; ++i) {
             Value tempValues[tupleSize];
             for (int j = 0; j < tupleSize; ++j) {
@@ -84,7 +92,9 @@ void OrderPack::process() {
     }
 
     case DELETE_VALUES: {
-        printf("DEBUG: DELETE %s %d\n", tbname, conditionList.size());
+        if (isDebug) {
+            printf("DEBUG: DELETE %s %d\n", tbname, conditionList.size());
+        }
         int size = conditionList.size();
         Condition conditions[size];
         for (int i = 0; i < size; ++i) {
@@ -96,9 +106,13 @@ void OrderPack::process() {
                 conditions[i].rhsAttr.relName = tbname;
             }
         }
-        printf("DEBUG: start deleting\n");
+        if (isDebug) {
+            printf("DEBUG: start deleting\n");
+        }
         qlm.del(tbname, size, conditions);
-        printf("DEBUG: finish deleting\n");
+        if (isDebug) {
+            printf("DEBUG: finish deleting\n");
+        }
         break;
     }
 
@@ -114,9 +128,13 @@ void OrderPack::process() {
                 conditions[i].rhsAttr.relName = tbname;
             }
         }
-        printf("DEBUG: start updating\n");
+        if (isDebug) {
+            printf("DEBUG: start updating\n");
+        }
         qlm.update(tbname, updAttr, (updValue.data != NULL || updValue.type == NULL_TYPE), updRhsAttr, updValue, size, conditions);
-        printf("DEBUG: finish updating\n");
+        if (isDebug) {
+            printf("DEBUG: finish updating\n");
+        }
         break;
     }
 
@@ -154,9 +172,13 @@ void OrderPack::process() {
             if (selectList.selectType == SelectList::AGGREGATE) {
                 len = -2 - aggType;
             }
-            printf("DEBUG: start selecting\n");
+            if (isDebug) {
+                printf("DEBUG: start selecting\n");
+            }
             qlm.select(len, selAttrs, relation1, relation2, joinType, size, conditions);
-            printf("DEBUG: finish selecting\n");
+            if (isDebug) {
+                printf("DEBUG: finish selecting\n");
+            }
         }
         break;
     }
