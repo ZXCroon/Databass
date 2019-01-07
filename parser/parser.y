@@ -491,7 +491,7 @@ WhereClause         :   Col '=' Expr
                             condition.lhsAttr = {$1.tbname, $1.colname};
                             condition.op = ISNULL_OP;
                             condition.bRhsIsAttr = 0;
-                            condition.rhsValue = {$3.attrType, $3.value};
+                            condition.rhsValue = {NULL_TYPE, NULL};
                             $$.conditionList.push_back(condition);
                         }
                     |   Col IS NOT NUL
@@ -501,7 +501,7 @@ WhereClause         :   Col '=' Expr
                             condition.lhsAttr = {$1.tbname, $1.colname};
                             condition.op = NOTNULL_OP;
                             condition.bRhsIsAttr = 0;
-                            condition.rhsValue = {$3.attrType, $3.value};
+                            condition.rhsValue = {NULL_TYPE, NULL};
                             $$.conditionList.push_back(condition);
                         }
                     |   WhereClause AND WhereClause
