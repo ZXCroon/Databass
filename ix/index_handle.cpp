@@ -1,6 +1,8 @@
 #include <cstring>
 #include "ix.h"
 
+extern bool isDebug;
+
 
 IX_IndexHandle::IX_IndexHandle(BufPageManager *&bpm, int fileId) : bpm(bpm), fileId(fileId) {
     IX_FileHeaderPage *header = (IX_FileHeaderPage *)getPageData(0, false);
@@ -20,7 +22,9 @@ IX_IndexHandle::~IX_IndexHandle() {}
 
 bool IX_IndexHandle::insertEntry(void *pData, const RID &rid) {
     //todo check if not an open index
-    printf("%d %d\n", rid.getPageNum(), rid.getSlotNum());
+    if (isDebug) {
+        printf("%d %d\n", rid.getPageNum(), rid.getSlotNum());
+    }
     if (root.getPageNum() == -1 && root.getSlotNum() == -1) {
         char *tempData = new char[recordSize];
         memset(tempData, 0, recordSize);
@@ -38,7 +42,6 @@ bool IX_IndexHandle::insertEntry(void *pData, const RID &rid) {
     if (findInsertPos(root, pData, rid, res, pos) == false) {
         return false;
     }
-    printf("finished\n");
 
     IX_Record rec;
     assert(getRec(res, rec) == true);
@@ -289,9 +292,7 @@ int IX_IndexHandle::getAttrLength() const {
 
 bool IX_IndexHandle::findInsertPos(RID u, void *pData, const RID &rid, RID &res, int &pos) const {
     IX_Record rec;
-    printf("1\n");
     if (!getRec(u, rec)) {
-        printf("2\n");
         return false;
     }
     
@@ -300,26 +301,21 @@ bool IX_IndexHandle::findInsertPos(RID u, void *pData, const RID &rid, RID &res,
         for (int i = 0; i < *(getSize(rec.getData())); ++i) {
             if (indexEQ(pData, rid, getIndexValue(rec.getData(), i), *(getIndexRID(rec.getData(), i)))) {
                 pos = i;
-                printf("3\n");
                 return false;
             }
             if (indexLT(pData, rid, getIndexValue(rec.getData(), i), *(getIndexRID(rec.getData(), i)))) {
                 pos = i;
-                printf("4\n");
                 return true;
             }
         }
         pos = *(getSize(rec.getData()));
-        printf("5\n");
         return true;
     }
 
     for (int i = 0; i < *(getSize(rec.getData())); ++i)
     if (indexLT(pData, rid, getIndexValue(rec.getData(), i), *(getIndexRID(rec.getData(), i)))) {
-        printf("6\n");
         return findInsertPos(*(getChild(rec.getData(), i)), pData, rid, res, pos);
     }
-    printf("7\n");
     return findInsertPos(*(getChild(rec.getData(), *(getSize(rec.getData())))), pData, rid, res, pos);
 }
 

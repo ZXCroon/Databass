@@ -1,5 +1,6 @@
 #include "ix.h"
 
+extern bool isDebug;
 
 IX_IndexScan::IX_IndexScan() : open(false) {}
 
@@ -78,5 +79,8 @@ RC IX_IndexScan::getNextEntry(RID &rid) {
     //todo get the record of res in node
     rid = *(indexHandle->getIndexRID(rec.getData(), pos));
     indexHandle->searchNext(res, pos, direct);
+    if (isDebug) {
+        printf("DEBUG: scan using IX!!!\n");
+    }
     return 0;
 }
