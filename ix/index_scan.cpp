@@ -1,5 +1,6 @@
 #include "ix.h"
 
+extern bool isDebug;
 
 IX_IndexScan::IX_IndexScan() : open(false) {}
 

@@ -2,6 +2,7 @@
 #include "../utils/utils.h"
 #include <vector>
 
+extern bool isDebug;
 
 QL_Aggregator::QL_Aggregator(AttrType attrType, AggType aggType) : attrType(attrType), aggType(aggType),
         tmpi(0), tmpf(0), cnt(0) {}
@@ -444,6 +445,7 @@ bool QL_Manager::decideStrategy(const char *relation1, const char *relation2,
             if (ac->indexNo != -1) {
                 strat.strat1.attrcat = ac;
                 strat.strat1.value = cond.rhsValue;
+                strat.strat1.compOp = cond.op;
                 return true;
             }
         }

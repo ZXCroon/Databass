@@ -1,6 +1,8 @@
 #include <cstring>
 #include "ix.h"
 
+extern bool isDebug;
+
 
 IX_IndexHandle::IX_IndexHandle(BufPageManager *&bpm, int fileId) : bpm(bpm), fileId(fileId) {
     IX_FileHeaderPage *header = (IX_FileHeaderPage *)getPageData(0, false);
@@ -20,7 +22,6 @@ IX_IndexHandle::~IX_IndexHandle() {}
 
 bool IX_IndexHandle::insertEntry(void *pData, const RID &rid) {
     //todo check if not an open index
-    printf("%d %d\n", rid.getPageNum(), rid.getSlotNum());
     if (root.getPageNum() == -1 && root.getSlotNum() == -1) {
         char *tempData = new char[recordSize];
         memset(tempData, 0, recordSize);
@@ -30,6 +31,7 @@ bool IX_IndexHandle::insertEntry(void *pData, const RID &rid) {
         memcpy(getNext(tempData), &nullRID, sizeof(RID));
 
         insertRec(tempData, root);
+        delete[] tempData;
         IX_FileHeaderPage *header = (IX_FileHeaderPage *)getPageData(0, true);
         header->root = root;
     }
@@ -38,7 +40,6 @@ bool IX_IndexHandle::insertEntry(void *pData, const RID &rid) {
     if (findInsertPos(root, pData, rid, res, pos) == false) {
         return false;
     }
-    printf("finished\n");
 
     IX_Record rec;
     assert(getRec(res, rec) == true);
@@ -103,6 +104,7 @@ bool IX_IndexHandle::insertEntry(void *pData, const RID &rid) {
     const char* tempData = new char[recordSize];
     RID newRID;
     assert(insertRec(tempData, newRID) == true);
+    delete[] tempData;
     IX_Record newRec;
     assert(getRec(newRID, newRec) == true);
     RID nextRID;
@@ -128,7 +130,7 @@ bool IX_IndexHandle::insertEntry(void *pData, const RID &rid) {
     memcpy(getPrev(newRec.getData()), &res, sizeof(RID));
     memcpy(getNext(newRec.getData()), &nextRID, sizeof(RID));
     updateRec(newRec);
-    
+
     // update nextRec
     if (nextRID != RID(-1, -1)) {
         IX_Record nextRec;
@@ -139,6 +141,9 @@ bool IX_IndexHandle::insertEntry(void *pData, const RID &rid) {
 
     combinePair(res, newRID, tempIndexValue[3], tempIndexRID[3]);
 
+    for (int i = 0; i < 5; ++i) {
+        delete[] tempIndexValue[i];
+    }
     return true;
 }
 
@@ -204,6 +209,7 @@ bool IX_IndexHandle::deleteEntry(void *pData, const RID &rid) {
 bool IX_IndexHandle::getRec(const RID &rid, IX_Record &rec) const {
     PageNum pageNum = rid.getPageNum();
     SlotNum slotNum = rid.getSlotNum();
+    assert(pageNum != -1 && slotNum != -1);
     char *page = getPageData(pageNum, false);
     rec = IX_Record(recordSize, attrLength, rid);
     if (queryBit(((IX_PageHeader *)page)->bitmap, slotNum) == 1) {
@@ -289,9 +295,7 @@ int IX_IndexHandle::getAttrLength() const {
 
 bool IX_IndexHandle::findInsertPos(RID u, void *pData, const RID &rid, RID &res, int &pos) const {
     IX_Record rec;
-    printf("1\n");
     if (!getRec(u, rec)) {
-        printf("2\n");
         return false;
     }
     
@@ -300,26 +304,21 @@ bool IX_IndexHandle::findInsertPos(RID u, void *pData, const RID &rid, RID &res,
         for (int i = 0; i < *(getSize(rec.getData())); ++i) {
             if (indexEQ(pData, rid, getIndexValue(rec.getData(), i), *(getIndexRID(rec.getData(), i)))) {
                 pos = i;
-                printf("3\n");
                 return false;
             }
             if (indexLT(pData, rid, getIndexValue(rec.getData(), i), *(getIndexRID(rec.getData(), i)))) {
                 pos = i;
-                printf("4\n");
                 return true;
             }
         }
         pos = *(getSize(rec.getData()));
-        printf("5\n");
         return true;
     }
 
     for (int i = 0; i < *(getSize(rec.getData())); ++i)
     if (indexLT(pData, rid, getIndexValue(rec.getData(), i), *(getIndexRID(rec.getData(), i)))) {
-        printf("6\n");
         return findInsertPos(*(getChild(rec.getData(), i)), pData, rid, res, pos);
     }
-    printf("7\n");
     return findInsertPos(*(getChild(rec.getData(), *(getSize(rec.getData())))), pData, rid, res, pos);
 }
 
@@ -495,6 +494,7 @@ void IX_IndexHandle::combinePair(RID &u, RID &v, void *pData, const RID &rid) {
         *(getPrev(tempData)) = RID(-1, -1);
         *(getNext(tempData)) = RID(-1, -1);
         insertRec(tempData, root);
+        delete[] tempData;
 
         IX_FileHeaderPage *header = (IX_FileHeaderPage *)getPageData(0, true);
         header->root = root;
@@ -515,7 +515,7 @@ void IX_IndexHandle::combinePair(RID &u, RID &v, void *pData, const RID &rid) {
     assert(getRec(u, uRec) == true);
     memcpy(&f, getFather(uRec.getData()), sizeof(RID));
     assert(getRec(f, faRec) == true);
-    
+
     int pos = -1;
     for (int i = 0; i <= *(getSize(faRec.getData())); ++i)
     if (*(getChild(faRec.getData(), i)) == u) {
@@ -537,7 +537,6 @@ void IX_IndexHandle::combinePair(RID &u, RID &v, void *pData, const RID &rid) {
         memcpy(getChild(faRec.getData(), pos + 1), &v, sizeof(RID));
         ++(*(getSize(faRec.getData())));
         updateRec(faRec);
-
         return;
     }
 
@@ -580,6 +579,7 @@ void IX_IndexHandle::combinePair(RID &u, RID &v, void *pData, const RID &rid) {
     const char* tempData = new char[recordSize];
     RID newRID;
     assert(insertRec(tempData, newRID) == true);
+    delete[] tempData;
     IX_Record newRec;
     assert(getRec(newRID, newRec) == true);
     
@@ -608,6 +608,10 @@ void IX_IndexHandle::combinePair(RID &u, RID &v, void *pData, const RID &rid) {
     updateRec(newRec);
 
     combinePair(f, newRID, tempIndexValue[2], tempIndexRID[2]);
+
+    for (int i = 0; i < 5; ++i) {
+        delete[] tempIndexValue[i];
+    }
 }
 
 
