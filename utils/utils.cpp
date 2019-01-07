@@ -2,13 +2,42 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
-#include <string.h>
 #include "utils.h"
 #include "defs.h"
 
 
 bool isNull(const void *value, int attrLength) {
     return memcmp(value, ((const char *)value) + 1, attrLength - 1) == 0 && ((const unsigned char *)value)[0] == NULL_BYTE;
+}
+
+
+int mystrncasecmp(const char *u, const char *v, int len = -1) {
+    int i = 0;
+    for (; (len == -1 && u[i] != '\0' && v[i] != '\0') || (len != -1 && i < len); ++i) {
+        char c1 = u[i], c2 = v[i];
+        if (c1 >= 'a' && c1 <= 'z') {
+            c1 += 'A' - 'a';
+        }
+        if (c2 >= 'a' && c2 <= 'z') {
+            c2 += 'A' - 'a';
+        }
+        if (c1 < c2) {
+            return -1;
+        }
+        if (c1 > c2) {
+            return 1;
+        }
+    }
+    if (len != -1) {
+        return 0;
+    }
+    if (u[i] == '\0' && v[i] != '\0') {
+        return -1;
+    }
+    if (u[i] != '\0' && v[i] == '\0') {
+        return 1;
+    }
+    return 0;
 }
 
 
@@ -145,6 +174,9 @@ bool validate(const char *pData1, const char *pData2, AttrType attrType1, AttrTy
     if (compOp == ISNULL_OP || compOp == NOTNULL_OP) {
         return validate(pData1, attrType1, attrLength1, compOp, NULL, case_sensitive);
     }
+    if (attrType1 == NULL_TYPE || attrType2 == NULL_TYPE) {
+        return false;
+    }
     if (attrType1 == attrType2) {
         return validate(pData1, attrType1, attrLength1, compOp, pData2, case_sensitive);
     }
@@ -224,6 +256,9 @@ bool validate(const char *pData, AttrType attrType, int attrLength,
     if (compOp == NOTNULL_OP) {
         return !isNull(pData, attrLength);
     }
+    if (isNull(pData, attrLength)) {
+        return false;
+    }
 
     if (compOp == LIKE_OP) {
         if (isNull(pData, attrLength) || isNull(value, attrLength)) {
@@ -278,13 +313,13 @@ bool validate(const char *pData, AttrType attrType, int attrLength,
             if (case_sensitive) {
                 cmp = strncmp(u, v, attrLength);
             } else {
-                cmp = strncasecmp(u, v, attrLength);
+                cmp = mystrncasecmp(u, v, attrLength);
             }
         } else if (attrType == VARSTRING) {
             if (case_sensitive) {
                 cmp = strcmp(u, v);
             } else {
-                cmp = strcasecmp(u, v);
+                cmp = mystrncasecmp(u, v);
             }
         } else {
             cmp = cmpDate((char *)pData, (char *)value);
