@@ -17,11 +17,6 @@ RC IX_IndexScan::openScan(const IX_IndexHandle &indexHandle, CompOp compOp, void
     this->value = value;
     RID none(-1, -1);
     RID inf(100000000, 100000000);
-    if (isDebug) {
-        printf("DEBUG entering scan!!!\n");
-        printf("DEBUG scanning %d\n", compOp);
-        printf("DEBUG scanning %d\n", *((int*)value));
-    }
     switch (compOp){
         case EQ_OP:
             indexHandle.searchGE(indexHandle.getRoot(), value, none, res, pos);
@@ -84,8 +79,5 @@ RC IX_IndexScan::getNextEntry(RID &rid) {
     //todo get the record of res in node
     rid = *(indexHandle->getIndexRID(rec.getData(), pos));
     indexHandle->searchNext(res, pos, direct);
-    if (isDebug) {
-        printf("DEBUG: scan using IX!!!\n");
-    }
     return 0;
 }

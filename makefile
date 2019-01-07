@@ -1,6 +1,6 @@
 LEX = flex
 YACC = bison
-CC = g++ -std=c++11 -O2
+CC = g++ -std=c++11 -g
 SRCS = $(wildcard **/*.cpp)
 SRCS_FOR_TEST = $(wildcard ??/*.cpp) $(wildcard utils/*.cpp) test.cpp
 #FS_HEADERS = $(wildcard fs/**/*.h)
