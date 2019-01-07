@@ -11,6 +11,36 @@ bool isNull(const void *value, int attrLength) {
 }
 
 
+int mystrncasecmp(const char *u, const char *v, int len = -1) {
+    int i = 0;
+    for (; (len == -1 && u[i] != '\0' && v[i] != '\0') || (len != -1 && i < len); ++i) {
+        char c1 = u[i], c2 = v[i];
+        if (c1 >= 'a' && c1 <= 'z') {
+            c1 += 'A' - 'a';
+        }
+        if (c2 >= 'a' && c2 <= 'z') {
+            c2 += 'A' - 'a';
+        }
+        if (c1 < c2) {
+            return -1;
+        }
+        if (c1 > c2) {
+            return 1;
+        }
+    }
+    if (len != -1) {
+        return 0;
+    }
+    if (u[i] == '\0' && v[i] != '\0') {
+        return -1;
+    }
+    if (u[i] != '\0' && v[i] == '\0') {
+        return 1;
+    }
+    return 0;
+}
+
+
 bool checkLike(std::string str, std::string pattern) {
     int m = str.length(), n = pattern.length();
     bool *match = new bool[m + 1], *sumMatch = new bool[m + 1];
@@ -140,24 +170,27 @@ bool convertToDate(char *value) {
 
 
 bool validate(const char *pData1, const char *pData2, AttrType attrType1, AttrType attrType2,
-              int attrLength1, int attrLength2, CompOp compOp, bool strict) {
+              int attrLength1, int attrLength2, CompOp compOp, bool strict, bool case_sensitive) {
     if (compOp == ISNULL_OP || compOp == NOTNULL_OP) {
-        return validate(pData1, attrType1, attrLength1, compOp, NULL);
+        return validate(pData1, attrType1, attrLength1, compOp, NULL, case_sensitive);
+    }
+    if (attrType1 == NULL_TYPE || attrType2 == NULL_TYPE) {
+        return false;
     }
     if (attrType1 == attrType2) {
-        return validate(pData1, attrType1, attrLength1, compOp, pData2);
+        return validate(pData1, attrType1, attrLength1, compOp, pData2, case_sensitive);
     }
     if (attrType1 == INT && attrType2 == FLOAT) {
         char *pDatat = new char[attrLength2];
         *(float *)pDatat = (float)(*(int *)pData1);
-        bool ans = validate(pDatat, FLOAT, attrLength2, compOp, pData2);
+        bool ans = validate(pDatat, FLOAT, attrLength2, compOp, pData2, case_sensitive);
         delete[] pDatat;
         return ans;
     }
     if (attrType1 == FLOAT && attrType2 == INT) {
         char *pDatat = new char[attrLength1];
         *(float *)pDatat = (float)(*(int *)pData2);
-        bool ans = validate(pData1, FLOAT, attrLength1, compOp, pDatat);
+        bool ans = validate(pData1, FLOAT, attrLength1, compOp, pDatat, case_sensitive);
         delete[] pDatat;
         return ans;
     }
@@ -173,7 +206,7 @@ bool validate(const char *pData1, const char *pData2, AttrType attrType1, AttrTy
             delete[] pDatat;
             return false;
         }
-        bool ans = validate(pData1, DATE, attrLength1, compOp, pDatat);
+        bool ans = validate(pData1, DATE, attrLength1, compOp, pDatat, case_sensitive);
         delete[] pDatat;
         return ans;
     }
@@ -185,7 +218,7 @@ bool validate(const char *pData1, const char *pData2, AttrType attrType1, AttrTy
             delete[] pDatat;
             return false;
         }
-        bool ans = validate(pDatat, DATE, attrLength2, compOp, pData2);
+        bool ans = validate(pDatat, DATE, attrLength2, compOp, pData2, case_sensitive);
         delete[] pDatat;
         return ans;
     }
@@ -194,14 +227,14 @@ bool validate(const char *pData1, const char *pData2, AttrType attrType1, AttrTy
         std::string str2(pData2, attrLength2);
         str1.erase(str1.find_last_not_of(" ") + 1);
         str2.erase(str2.find_last_not_of(" ") + 1);
-        return validate(str1.c_str(), VARSTRING, 0, compOp, str2.c_str());
+        return validate(str1.c_str(), VARSTRING, 0, compOp, str2.c_str(), case_sensitive);
     }
     if (attrType1 == STRING && attrType2 == VARSTRING) {
         std::string str1(pData1, attrLength1);
         std::string str2(pData2);
         str1.erase(str1.find_last_not_of(" ") + 1);
         str2.erase(str2.find_last_not_of(" ") + 1);
-        return validate(str1.c_str(), VARSTRING, 0, compOp, str2.c_str());
+        return validate(str1.c_str(), VARSTRING, 0, compOp, str2.c_str(), case_sensitive);
     }
     Error::condTypeError();
     return false;
@@ -209,7 +242,7 @@ bool validate(const char *pData1, const char *pData2, AttrType attrType1, AttrTy
 
 
 bool validate(const char *pData, AttrType attrType, int attrLength,
-              CompOp compOp, const void *value) {
+              CompOp compOp, const void *value, bool case_sensitive) {
     if (compOp == NO_OP) {
         return true;
     }
@@ -222,6 +255,9 @@ bool validate(const char *pData, AttrType attrType, int attrLength,
     }
     if (compOp == NOTNULL_OP) {
         return !isNull(pData, attrLength);
+    }
+    if (isNull(pData, attrLength)) {
+        return false;
     }
 
     if (compOp == LIKE_OP) {
@@ -274,9 +310,17 @@ bool validate(const char *pData, AttrType attrType, int attrLength,
         int cmp;
         const char *u = pData, *v = (char *)value;
         if (attrType == STRING) {
-            cmp = strncmp(u, v, attrLength);
+            if (case_sensitive) {
+                cmp = strncmp(u, v, attrLength);
+            } else {
+                cmp = mystrncasecmp(u, v, attrLength);
+            }
         } else if (attrType == VARSTRING) {
-            cmp = strcmp(u, v);
+            if (case_sensitive) {
+                cmp = strcmp(u, v);
+            } else {
+                cmp = mystrncasecmp(u, v);
+            }
         } else {
             cmp = cmpDate((char *)pData, (char *)value);
         }
