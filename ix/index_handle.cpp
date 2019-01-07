@@ -46,15 +46,22 @@ bool IX_IndexHandle::insertEntry(void *pData, const RID &rid) {
 
     // update index
     if (pos == 0 && res != root) {
-        void *replaced_value = getIndexValue(rec.getData(), 0);
-        RID *replaced_rid = getIndexRID(rec.getData(), 0);
+        void *replaced_value = new char[attrLength];
+        memcpy(replaced_value, getIndexValue(rec.getData(), 0), attrLength);
+        RID replaced_rid;
+        memcpy(&replaced_rid, getIndexRID(rec.getData(), 0), sizeof(RID));
+
+        // void *replaced_value = getIndexValue(rec.getData(), 0);
+        // RID *replaced_rid = getIndexRID(rec.getData(), 0);
         IX_Record frec;
+        RID temp;
         assert(getRec(res, frec) == true);
         while (*(getFather(frec.getData())) != root) {
-            res = *(getFather(frec.getData()));
-            assert(getRec(res, frec) == true);
+            memcpy(&temp, getFather(frec.getData()), sizeof(RID));
+            // res = *(getFather(frec.getData()));
+            assert(getRec(temp, frec) == true);
             for (int i = 0; i < *(getSize(frec.getData())); ++i) {
-                if (indexEQ(replaced_value, *replaced_rid, getIndexValue(frec.getData(), i), *(getIndexRID(frec.getData(), i)))) {
+                if (indexEQ(replaced_value, replaced_rid, getIndexValue(frec.getData(), i), *(getIndexRID(frec.getData(), i)))) {
                     memcpy(getIndexValue(frec.getData(), i), pData, attrLength);
                     memcpy(getIndexRID(frec.getData(), i), &rid, sizeof(RID));
                     updateRec(frec);
