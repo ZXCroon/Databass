@@ -269,6 +269,11 @@ Type                :   TYPE_INT '(' VALUE_INT ')'
                             $$.attrType = INT;
                             $$.attrLength = 4;
                         }
+                    |   TYPE_INT
+                        {
+                            $$.attrType = INT;
+                            $$.attrLength = 4;
+                        }
                     |   TYPE_VARCHAR '(' VALUE_INT ')'
                         {
                             $$.attrType = VARSTRING;
@@ -326,7 +331,7 @@ Value               :   VALUE_INT
                     |   VALUE_STRING
                         {
                             $$.value = $1.value;
-                            $$.attrType = STRING;
+                            $$.attrType = VARSTRING;
                         }
                     |   VALUE_FLOAT
                         {
@@ -336,6 +341,7 @@ Value               :   VALUE_INT
                     |   NUL
                         {
                             $$.value = NULL;
+                            $$.attrType = NULL_TYPE;
                         }
                     ;
 
@@ -345,7 +351,7 @@ WhereClause         :   Col '=' Expr
                             Condition condition;
                             condition.lhsAttr = {$1.tbname, $1.colname};
                             condition.op = EQ_OP;
-                            if ($3.value == NULL) {
+                            if ($3.value == NULL && $3.attrType != NULL_TYPE) {
                                 condition.bRhsIsAttr = 1;
                                 condition.rhsAttr = {$3.tbname, $3.colname};
                             }
@@ -362,7 +368,7 @@ WhereClause         :   Col '=' Expr
                             Condition condition;
                             condition.lhsAttr = {$1.tbname, $1.colname};
                             condition.op = NE_OP;
-                            if ($3.value == NULL) {
+                            if ($3.value == NULL && $3.attrType != NULL_TYPE) {
                                 condition.bRhsIsAttr = 1;
                                 condition.rhsAttr = {$3.tbname, $3.colname};
                             }
@@ -378,7 +384,7 @@ WhereClause         :   Col '=' Expr
                             Condition condition;
                             condition.lhsAttr = {$1.tbname, $1.colname};
                             condition.op = LE_OP;
-                            if ($3.value == NULL) {
+                            if ($3.value == NULL && $3.attrType != NULL_TYPE) {
                                 condition.bRhsIsAttr = 1;
                                 condition.rhsAttr = {$3.tbname, $3.colname};
                             }
@@ -394,7 +400,7 @@ WhereClause         :   Col '=' Expr
                             Condition condition;
                             condition.lhsAttr = {$1.tbname, $1.colname};
                             condition.op = GE_OP;
-                            if ($3.value == NULL) {
+                            if ($3.value == NULL && $3.attrType != NULL_TYPE) {
                                 condition.bRhsIsAttr = 1;
                                 condition.rhsAttr = {$3.tbname, $3.colname};
                             }
@@ -410,7 +416,7 @@ WhereClause         :   Col '=' Expr
                             Condition condition;
                             condition.lhsAttr = {$1.tbname, $1.colname};
                             condition.op = LT_OP;
-                            if ($3.value == NULL) {
+                            if ($3.value == NULL && $3.attrType != NULL_TYPE) {
                                 condition.bRhsIsAttr = 1;
                                 condition.rhsAttr = {$3.tbname, $3.colname};
                             }
@@ -426,7 +432,7 @@ WhereClause         :   Col '=' Expr
                             Condition condition;
                             condition.lhsAttr = {$1.tbname, $1.colname};
                             condition.op = GT_OP;
-                            if ($3.value == NULL) {
+                            if ($3.value == NULL && $3.attrType != NULL_TYPE) {
                                 condition.bRhsIsAttr = 1;
                                 condition.rhsAttr = {$3.tbname, $3.colname};
                             }
@@ -442,7 +448,7 @@ WhereClause         :   Col '=' Expr
                             Condition condition;
                             condition.lhsAttr = {$1.tbname, $1.colname};
                             condition.op = LIKE_OP;
-                            if ($3.value == NULL) {
+                            if ($3.value == NULL && $3.attrType != NULL_TYPE) {
                                 condition.bRhsIsAttr = 1;
                                 condition.rhsAttr = {$3.tbname, $3.colname};
                             }
@@ -458,14 +464,8 @@ WhereClause         :   Col '=' Expr
                             Condition condition;
                             condition.lhsAttr = {$1.tbname, $1.colname};
                             condition.op = ISNULL_OP;
-                            if ($3.value == NULL) {
-                                condition.bRhsIsAttr = 1;
-                                condition.rhsAttr = {$3.tbname, $3.colname};
-                            }
-                            else {
-                                condition.bRhsIsAttr = 0;
-                                condition.rhsValue = {$3.attrType, $3.value};
-                            }
+                            condition.bRhsIsAttr = 0;
+                            condition.rhsValue = {$3.attrType, $3.value};
                             $$.conditionList.push_back(condition);
                         }
                     |   Col IS NOT NUL
@@ -474,14 +474,8 @@ WhereClause         :   Col '=' Expr
                             Condition condition;
                             condition.lhsAttr = {$1.tbname, $1.colname};
                             condition.op = NOTNULL_OP;
-                            if ($3.value == NULL) {
-                                condition.bRhsIsAttr = 1;
-                                condition.rhsAttr = {$3.tbname, $3.colname};
-                            }
-                            else {
-                                condition.bRhsIsAttr = 0;
-                                condition.rhsValue = {$3.attrType, $3.value};
-                            }
+                            condition.bRhsIsAttr = 0;
+                            condition.rhsValue = {$3.attrType, $3.value};
                             $$.conditionList.push_back(condition);
                         }
                     |   WhereClause AND WhereClause

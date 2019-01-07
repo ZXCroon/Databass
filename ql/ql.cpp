@@ -5,7 +5,9 @@
 
 
 QL_Manager::QL_Manager(SM_Manager *smm, IX_Manager *ixm, RM_Manager *rmm) :
-        smm(smm), ixm(ixm), rmm(rmm) {}
+        smm(smm), ixm(ixm), rmm(rmm), valBuf(Value{INT, valDataBuf}) {
+    memset(nullBuf, NULL_BYTE, sizeof(nullBuf));
+}
 
 
 QL_Manager::~QL_Manager() {}
@@ -34,8 +36,7 @@ void QL_Manager::insert(const char *relName, int nValues, Value values[]) {
 
     char *data = new char[cat.relcat.tupleLength];
     for (int i = 0; i < cat.relcat.attrCount; ++i) {
-        memcpy(data + cat.attrcats[i].offset, padValue(values[i].data, values[i].type, cat.attrcats[i].attrLength),
-               cat.attrcats[i].attrLength);
+        memcpy(data + cat.attrcats[i].offset, values[i].data, cat.attrcats[i].attrLength);
     }
     RID rid;
     handle->insertRec(data, rid);
@@ -69,8 +70,11 @@ void QL_Manager::del(const char *relName, int nConditions, const Condition condi
 
     if (strat.strat1.attrcat != NULL) {
         ixm->openIndex(getPath(smm->dbName, relName), strat.strat1.attrcat->indexNo, ixHandle);
-        indexScan.openScan(*ixHandle, strat.strat1.compOp,
-                padValue(strat.strat1.value.data, strat.strat1.attrcat->attrType, strat.strat1.attrcat->attrLength));
+        if (!filterValue(strat.strat1.value, strat.strat1.attrcat, false)) {
+            Error::condTypeError();
+            return;
+        }
+        indexScan.openScan(*ixHandle, strat.strat1.compOp, valBuf.data);
         while (true) {
             RC rc = indexScan.getNextEntry(rid);
             if (rc == IX_INDEXSCAN_EOF) {
@@ -133,8 +137,11 @@ void QL_Manager::update(const char *relName, const RelAttr &updAttr, const int b
 
     if (strat.strat1.attrcat != NULL) {
         ixm->openIndex(getPath(smm->dbName, relName), strat.strat1.attrcat->indexNo, ixHandle);
-        indexScan.openScan(*ixHandle, strat.strat1.compOp,
-                padValue(strat.strat1.value.data, strat.strat1.attrcat->attrType, strat.strat1.attrcat->attrLength));
+        if (!filterValue(strat.strat1.value, strat.strat1.attrcat, false)) {
+            Error::condTypeError();
+            return;
+        }
+        indexScan.openScan(*ixHandle, strat.strat1.compOp, valBuf.data);
         while (true) {
             RC rc = indexScan.getNextEntry(rid);
             if (rc == IX_INDEXSCAN_EOF) {
@@ -187,8 +194,7 @@ void QL_Manager::update(const char *relName, const RelAttr &updAttr, const int b
             handle->getRec(rids[k], rec);
             ixHandle->deleteEntry(rec.getData() + updAc->offset, rids[k]);
             if (bIsValue) {
-                memcpy(rec.getData() + updAc->offset,
-                        padValue(rhsValue_.data, updAc->attrType, updAc->attrLength), updAc->attrLength);
+                memcpy(rec.getData() + updAc->offset, rhsValue_.data, updAc->attrLength);
             } else {
                 memcpy(rhsValue_.data, rec.getData() + rhsAc->offset, rhsAc->attrLength);
                 if (!filterValue(rhsValue_, updAc)) {
@@ -204,8 +210,7 @@ void QL_Manager::update(const char *relName, const RelAttr &updAttr, const int b
     for (int i = 0; i < rids.size(); ++i) {
         handle->getRec(rids[i], rec);
         if (bIsValue) {
-            memcpy(rec.getData() + updAc->offset,
-                    padValue(rhsValue_.data, updAc->attrType, updAc->attrLength), updAc->attrLength);
+            memcpy(rec.getData() + updAc->offset, rhsValue_.data, updAc->attrLength);
         } else {
             memcpy(rhsValue_.data, rec.getData() + rhsAc->offset, rhsAc->attrLength);
             if (!filterValue(rhsValue_, updAc)) {
@@ -273,58 +278,47 @@ char *QL_Manager::getPath(const char *dbName, const char *relName) {
 }
 
 
-void *QL_Manager::padValue(void *value, AttrType attrType, int attrLength) {
-    if (value == NULL) {
-        memset(valBuf, NULL_BYTE, attrLength);
-        return valBuf;
+bool QL_Manager::filterValue(Value &value, const AttrcatLayout *attrcat, bool in_place) {
+    if (!in_place) {
+        if (value.type == VARSTRING) {
+            memcpy(valBuf.data, value.data, MAXSTRINGLEN + 1);
+        } else {
+            memcpy(valBuf.data, value.data, 4);
+        }
+        valBuf.type = value.type;
     }
-    if (attrType != STRING) {
-        return value;
-    }
-    int len = strlen((const char *)value);
-    memset(valBuf, ' ', attrLength);
-    strcpy(valBuf, (char *)value);
-    if (len < attrLength) {
-        valBuf[len] = ' ';
-    }
-    return valBuf;
-}
-
-
-bool QL_Manager::filterValue(Value &value, const AttrcatLayout *attrcat) {
-    if (value.data == NULL) {
+    Value &value_ = in_place ? value : valBuf;
+    if (value_.data == NULL) {
         if ((attrcat->constrFlag & 3) != 0) {
             Error::nullError(attrcat->attrName);
             return false;
         }
-        value.type = attrcat->attrType;
+        value_.data = nullBuf;
+        value_.type = attrcat->attrType;
         return true;
     }
-    if (attrcat->attrType == value.type) {
+    if (attrcat->attrType == value_.type) {
         return true;
     }
-    if (attrcat->attrType == STRING && value.type == VARSTRING) {
-        value.type = STRING;
+    if (attrcat->attrType == STRING && value_.type == VARSTRING) {
+        value_.type = STRING;
+        memset(value_.data + strlen((char *)(value_.data)), ' ', attrcat->attrLength - strlen((char *)(value_.data)));
         return true;
     }
-    if (attrcat->attrType == VARSTRING && value.type == STRING) {
-        value.type = VARSTRING;
+    if (attrcat->attrType == FLOAT && value_.type == INT) {
+        value_.type = FLOAT;
+        *((float *)value_.data) = float(*((int *)value_.data));
         return true;
     }
-    if (attrcat->attrType == FLOAT && value.type == INT) {
-        value.type = FLOAT;
-        *((float *)value.data) = float(*((int *)value.data));
-        return true;
-    }
-    if (attrcat->attrType == DATE && (value.type == STRING || value.type == VARSTRING)) {
-        if (!convertToDate((char *)value.data)) {
+    if (attrcat->attrType == DATE && value_.type == VARSTRING) {
+        if (!convertToDate((char *)value_.data)) {
             Error::invalidDateError();
             return false;
         }
-        value.type = DATE;
+        value_.type = DATE;
         return true;
     }
-    Error::typeError(attrcat->attrType, value.type);
+    Error::typeError(attrcat->attrType, value_.type);
     return false;
 }
 
