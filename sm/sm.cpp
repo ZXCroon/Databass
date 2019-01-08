@@ -44,6 +44,10 @@ bool SM_Manager::openDb(const char *dbName) {
 
 
 void SM_Manager::showCurrentDb() {
+    if (relcatHandle == NULL || attrcatHandle == NULL) {
+        Error::notOpenDatabaseError();
+        return;
+    }
     RM_FileScan scan;
     scan.openScan(*relcatHandle, 0, 0, 0, NO_OP, NULL);
     RM_FileScan scan2;
@@ -114,6 +118,10 @@ bool SM_Manager::closeDb() {
 
 
 bool SM_Manager::createTable(const char *relName, int attrCount, AttrInfo *attributes) {
+    if (relcatHandle == NULL || attrcatHandle == NULL) {
+        Error::notOpenDatabaseError();
+        return false;
+    }
     RID rid;
     if (getRelcatRid(relName, rid)) {
         return false;
@@ -166,6 +174,10 @@ bool SM_Manager::createTable(const char *relName, int attrCount, AttrInfo *attri
 
 
 bool SM_Manager::showTable(const char *relName) {
+    if (relcatHandle == NULL || attrcatHandle == NULL) {
+        Error::notOpenDatabaseError();
+        return false;
+    }
     RM_FileScan scan;
     scan.openScan(*attrcatHandle, VARSTRING, MAXNAME + 1, 0, EQ_OP, relName);
     RM_Record rec;
@@ -187,6 +199,10 @@ bool SM_Manager::showTable(const char *relName) {
 
 bool SM_Manager::showTables() {
     if (relcatHandle == NULL || attrcatHandle == NULL) {
+        Error::notOpenDatabaseError();
+        return false;
+    }
+    if (relcatHandle == NULL || attrcatHandle == NULL) {
         return false;
     }
     std::vector<std::string> tbs = rmm->listDir(dbName);
@@ -204,6 +220,10 @@ bool SM_Manager::showTables() {
 
 
 bool SM_Manager::dropTable(const char *relName) {
+    if (relcatHandle == NULL || attrcatHandle == NULL) {
+        Error::notOpenDatabaseError();
+        return false;
+    }
     RID rid;
     if (!getRelcatRid(relName, rid)) {
         return false;
@@ -223,6 +243,10 @@ bool SM_Manager::dropTable(const char *relName) {
 
 
 bool SM_Manager::createIndex(const char *relName, const char *attrName) {
+    if (relcatHandle == NULL || attrcatHandle == NULL) {
+        Error::notOpenDatabaseError();
+        return false;
+    }
     RID rid;
     if (!getRelcatRid(relName, rid)) {
         return false;
@@ -278,6 +302,10 @@ bool SM_Manager::createIndex(const char *relName, const char *attrName) {
 
 
 bool SM_Manager::dropIndex(const char *relName, const char *attrName) {
+    if (relcatHandle == NULL || attrcatHandle == NULL) {
+        Error::notOpenDatabaseError();
+        return false;
+    }
     RID rids[MAXATTRS];
     int ridCount;
     if (!getAttrcatRids(relName, attrName, rids, ridCount)) {

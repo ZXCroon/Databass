@@ -14,6 +14,10 @@ QL_Manager::~QL_Manager() {}
 
 
 void QL_Manager::insert(const char *relName, int nValues, Value values[]) {
+    if (smm->relcatHandle == NULL || smm->attrcatHandle == NULL) {
+        Error::notOpenDatabaseError();
+        return;
+    }
     Catalog cat;
     getCatalog(relName, cat);
     if (nValues != cat.relcat.attrCount) {
@@ -54,6 +58,10 @@ void QL_Manager::insert(const char *relName, int nValues, Value values[]) {
 
 
 void QL_Manager::del(const char *relName, int nConditions, const Condition conditions[]) {
+    if (smm->relcatHandle == NULL || smm->attrcatHandle == NULL) {
+        Error::notOpenDatabaseError();
+        return;
+    }
     Catalog cat;
     getCatalog(relName, cat);
     RM_FileHandle *handle;
@@ -121,6 +129,10 @@ void QL_Manager::del(const char *relName, int nConditions, const Condition condi
 void QL_Manager::update(const char *relName, const RelAttr &updAttr, const int bIsValue,
                         const RelAttr &rhsRelAttr, Value &rhsValue,
                         int nConditions, const Condition conditions[]) {
+    if (smm->relcatHandle == NULL || smm->attrcatHandle == NULL) {
+        Error::notOpenDatabaseError();
+        return;
+    }
     Catalog cat;
     getCatalog(relName, cat);
     RM_FileHandle *handle;
