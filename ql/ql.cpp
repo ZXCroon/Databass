@@ -335,11 +335,11 @@ bool QL_Manager::checkUnique(Value &value, const AttrcatLayout *attrcat, RM_File
         RID rid;
         RC rc = indexScan.getNextEntry(rid);
         indexScan.closeScan();
+        ixm->closeIndex(*ixHandle);
         if (rc == 0) {
             Error::primaryNotUniqueError(attrcat->attrName);
             return false;
         }
-        indexScan.closeScan();
     } else {
         RM_FileScan scan;
         scan.openScan(*handle, attrcat->attrType, attrcat->attrLength, attrcat->offset, EQ_OP, value.data);

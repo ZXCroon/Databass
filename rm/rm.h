@@ -1,6 +1,7 @@
 #ifndef RM_H
 #define RM_H
 
+#include <map>
 #include "../utils/defs.h"
 #include "../utils/utils.h"
 #include "rm_rid.h"
@@ -88,7 +89,11 @@ public:
     std::vector<std::string> listDir(const char *dirName);
 
 private:
+    void clearPool();
+
     BufPageManager *bpm;
+    static const int MAX_POOL_SIZE;
+    std::map<std::string, RM_FileHandle *> handlePool;
 
 };
 

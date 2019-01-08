@@ -2,10 +2,16 @@
 #include <bitset>
 
 
+const int RM_Manager::MAX_POOL_SIZE = 64;
+
+
 RM_Manager::RM_Manager(BufPageManager *bpm) : bpm(bpm) {}
 
 
-RM_Manager::~RM_Manager() {}
+RM_Manager::~RM_Manager() {
+    std::cout << "DEBUG: RM_Manager flushed" << std::endl;
+    clearPool();
+}
 
 
 RC RM_Manager::createFile(const char *fileName, int recordSize) {
@@ -51,21 +57,41 @@ bool RM_Manager::deleteDir(const char *dirName) {
 
 
 bool RM_Manager::openFile(const char *fileName, RM_FileHandle *&fileHandle) {
+    std::string name(fileName);
+    auto it = handlePool.find(name);
+    if (it != handlePool.end()) {
+        fileHandle = it->second;
+        return true;
+    }
     int fileId;
     if (!bpm->fileManager->openFile(fileName, fileId)) {
         return false;
     }
     fileHandle = new RM_FileHandle(bpm, fileId);
+    if (handlePool.size() == MAX_POOL_SIZE) {
+        clearPool();
+    }
+    handlePool[name] = fileHandle;
     return true;
 }
 
 
 bool RM_Manager::closeFile(RM_FileHandle &fileHandle) {
-    bpm->close();
-    return !bpm->fileManager->closeFile(fileHandle.getFileId());
+    // bpm->close();
+    // return !bpm->fileManager->closeFile(fileHandle.getFileId());
+    return true;
 }
 
 
 std::vector<std::string> RM_Manager::listDir(const char *dirName) {
     return bpm->fileManager->listDir(dirName);
+}
+
+
+void RM_Manager::clearPool() {
+    bpm->close();
+    for (auto it = handlePool.begin(); it != handlePool.end(); ++it) {
+        bpm->fileManager->closeFile(it->second->getFileId());
+    }
+    handlePool.clear();
 }
