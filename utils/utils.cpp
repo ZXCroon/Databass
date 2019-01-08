@@ -416,3 +416,48 @@ void printAttrType(AttrType attrType, int attrLength) {
     std::cout << str;
     std::cout.flush();
 }
+
+
+std::map<std::string, clock_t> Timer::lastStart, Timer::duration;
+std::string Timer::lastTag = "";
+
+
+void Timer::markStart(std::string tag) {
+    if (lastStart.find(tag) == lastStart.end()) {
+        lastStart[tag] = clock();
+    }
+    lastTag = tag;
+}
+
+
+void Timer::markStop(std::string tag) {
+    auto it = lastStart.find(tag);
+    if (it == lastStart.end()) {
+        return;
+    }
+    lastStart.erase(it);
+    clock_t interval = clock() - it->second;
+    it = duration.find(tag);
+    if (it == duration.end()) {
+        duration[tag] = interval;
+    } else {
+        duration[tag] += interval;
+    }
+    lastTag = "";
+}
+
+
+void Timer::markSwitch(std::string tag) {
+    if (lastTag != "") {
+        markStop(lastTag);
+    }
+    markStart(tag);
+}
+
+
+void Timer::stat() {
+    std::cout << "** Time Statistics **" << std::endl;
+    for (auto it = duration.begin(); it != duration.end(); ++it) {
+        std::cout << it->first << ": " << (double)(it->second) / CLOCKS_PER_SEC << std::endl;
+    }
+}

@@ -73,6 +73,10 @@ typedef std::pair<RID, RID> PRID;
 RC QL_Manager::select(int nSelAttrs, const RelAttr selAttrs[],
                       const char* relation1, const char *relation2, JoinType joinType,
                       int nConditions, const Condition conditions[]) {
+    if (smm->relcatHandle == NULL || smm->attrcatHandle == NULL) {
+        Error::notOpenDatabaseError();
+        return 0;
+    }
     AggType aggType = NO_AGG;
     if (nSelAttrs <= -2) {
         aggType = -2 - nSelAttrs;

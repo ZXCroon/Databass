@@ -55,6 +55,12 @@ void Error::invalidDateError() {
 }
 
 
+void Error::notOpenDatabaseError() {
+    head();
+    std::cout << "No database is used." << std::endl;
+}
+
+
 void Error::head() {
     err = true;
     std::cout << "\033[1;31m[ERROR] \033[0m";

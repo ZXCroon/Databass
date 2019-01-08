@@ -14,6 +14,10 @@ QL_Manager::~QL_Manager() {}
 
 
 void QL_Manager::insert(const char *relName, int nValues, Value values[]) {
+    if (smm->relcatHandle == NULL || smm->attrcatHandle == NULL) {
+        Error::notOpenDatabaseError();
+        return;
+    }
     Catalog cat;
     getCatalog(relName, cat);
     if (nValues != cat.relcat.attrCount) {
@@ -54,6 +58,10 @@ void QL_Manager::insert(const char *relName, int nValues, Value values[]) {
 
 
 void QL_Manager::del(const char *relName, int nConditions, const Condition conditions[]) {
+    if (smm->relcatHandle == NULL || smm->attrcatHandle == NULL) {
+        Error::notOpenDatabaseError();
+        return;
+    }
     Catalog cat;
     getCatalog(relName, cat);
     RM_FileHandle *handle;
@@ -121,6 +129,10 @@ void QL_Manager::del(const char *relName, int nConditions, const Condition condi
 void QL_Manager::update(const char *relName, const RelAttr &updAttr, const int bIsValue,
                         const RelAttr &rhsRelAttr, Value &rhsValue,
                         int nConditions, const Condition conditions[]) {
+    if (smm->relcatHandle == NULL || smm->attrcatHandle == NULL) {
+        Error::notOpenDatabaseError();
+        return;
+    }
     Catalog cat;
     getCatalog(relName, cat);
     RM_FileHandle *handle;
@@ -327,15 +339,29 @@ bool QL_Manager::checkUnique(Value &value, const AttrcatLayout *attrcat, RM_File
     if (value.data == NULL || ((attrcat->constrFlag >> 1) & 1) == 0) {
         return true;
     }
-    RM_FileScan scan;
-    scan.openScan(*handle, attrcat->attrType, attrcat->attrLength, attrcat->offset, EQ_OP, value.data);
-    RC rc;
-    RM_Record rec;
-    rc = scan.getNextRec(rec);
-    scan.closeScan();
-    if (rc == 0) {
-        Error::primaryNotUniqueError(attrcat->attrName);
-        return false;
+    if (attrcat->indexNo != -1) {
+        IX_IndexScan indexScan;
+        IX_IndexHandle *ixHandle;
+        ixm->openIndex(getPath(smm->dbName, attrcat->relName), attrcat->indexNo, ixHandle);
+        indexScan.openScan(*ixHandle, EQ_OP, value.data);
+        RID rid;
+        RC rc = indexScan.getNextEntry(rid);
+        indexScan.closeScan();
+        ixm->closeIndex(*ixHandle);
+        if (rc == 0) {
+            Error::primaryNotUniqueError(attrcat->attrName);
+            return false;
+        }
+    } else {
+        RM_FileScan scan;
+        scan.openScan(*handle, attrcat->attrType, attrcat->attrLength, attrcat->offset, EQ_OP, value.data);
+        RM_Record rec;
+        RC rc = scan.getNextRec(rec);
+        scan.closeScan();
+        if (rc == 0) {
+            Error::primaryNotUniqueError(attrcat->attrName);
+            return false;
+        }
     }
     return true;
 }

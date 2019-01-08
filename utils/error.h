@@ -13,6 +13,7 @@ public:
     static void primaryNotUniqueError(const char *attrName);
     static void referenceError(const char *attrName, const char *refRelName, const char *refAttrName);
     static void invalidDateError();
+    static void notOpenDatabaseError();
     static bool err;
 private:
     static void head();

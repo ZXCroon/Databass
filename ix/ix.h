@@ -2,6 +2,7 @@
 #define IX_H
 
 #include <assert.h>
+#include <map>
 #include "../utils/defs.h"
 #include "../utils/utils.h"
 #include "../rm/rm_rid.h"
@@ -148,8 +149,11 @@ public:
 
 private:
     char* getIndexFilename(const char* filename, int indexNo);
+    void clearPool();
 
     BufPageManager *bpm;
+    static const int MAX_POOL_SIZE;
+    std::map<std::string, IX_IndexHandle *> handlePool;
 };
 
 
