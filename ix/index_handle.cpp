@@ -66,6 +66,7 @@ bool IX_IndexHandle::insertEntry(void *pData, const RID &rid) {
                 }
             }
         }
+        delete[] replaced_value;
     }
 
     if (*(getSize(rec.getData())) < 4) {
@@ -79,7 +80,7 @@ bool IX_IndexHandle::insertEntry(void *pData, const RID &rid) {
         assert(*(getSize(rec.getData())) <= 4);
         updateRec(rec);
 
-        debug(root);
+        // debug(root);
         return true;
     }
 
@@ -150,7 +151,7 @@ bool IX_IndexHandle::insertEntry(void *pData, const RID &rid) {
     for (int i = 0; i < 5; ++i) {
         delete[] tempIndexValue[i];
     }
-    debug(root);
+    // debug(root);
     return true;
 }
 
@@ -159,10 +160,10 @@ bool IX_IndexHandle::deleteEntry(void *pData, const RID &rid) {
     //todo check if not an open index
     RID res;
     int pos;
-    assert(findInsertPos(root, pData, rid, res, pos) == true);
+    assert(findInsertPos(root, pData, rid, res, pos) == false);
     
     IX_Record rec;
-    getRec(res, rec);
+    assert(getRec(res, rec) == true);
     for (int i = pos; i < *(getSize(rec.getData())) - 1; ++i) {
         memcpy(getIndexValue(rec.getData(), i), getIndexValue(rec.getData(), i + 1), attrLength);
         memcpy(getIndexRID(rec.getData(), i), getIndexRID(rec.getData(), i + 1), sizeof(RID));
@@ -174,19 +175,32 @@ bool IX_IndexHandle::deleteEntry(void *pData, const RID &rid) {
 
     // update indexValue in ancestor node
     if (pos == 0 && *(getSize(rec.getData())) > 0 && res != root) {
-        void *next_value = getIndexValue(rec.getData(), 0);
-        RID *next_rid = getIndexRID(rec.getData(), 0);
-        while (*(getFather(rec.getData())) != root) {
-            res = *(getFather(rec.getData()));
-            assert(getRec(res, rec) == true);
-            for (int i = 0; i < *(getSize(rec.getData())); ++i)
-            if (indexEQ(pData, rid, getIndexValue(rec.getData(), i), *(getIndexRID(rec.getData(), i)))) {
+        void *next_value = new char[attrLength];
+        memcpy(next_value, getIndexValue(rec.getData(), 0), attrLength);
+        RID next_rid;
+        memcpy(&next_rid, getIndexRID(rec.getData(), 0), sizeof(RID));
+        //  getIndexValue(rec.getData(), 0);
+        // RID *next_rid = getIndexRID(rec.getData(), 0);
+        RID temp;
+        IX_Record frec;
+        assert(getRec(res, frec) == true);
+        while (*(getFather(frec.getData())) != root) {
+            memcpy(&temp, getFather(frec.getData()), sizeof(RID));
+            // res = *(getFather(rec.getData()));
+            assert(getRec(temp, frec) == true);
+            for (int i = 0; i < *(getSize(frec.getData())); ++i)
+            if (indexEQ(pData, rid, getIndexValue(frec.getData(), i), *(getIndexRID(frec.getData(), i)))) {
                 memcpy(getIndexValue(rec.getData(), i), next_value, attrLength);
-                memcpy(getIndexRID(rec.getData(), i), next_rid, sizeof(RID));
-                updateRec(rec);
+                memcpy(getIndexRID(rec.getData(), i), &next_rid, sizeof(RID));
+                updateRec(frec);
+                delete[] next_value;
+
+                debug(root);
                 return true;
             }
         }
+        delete[] next_value;
+        debug(root);
         return true;
     }
 
@@ -209,6 +223,7 @@ bool IX_IndexHandle::deleteEntry(void *pData, const RID &rid) {
         deleteNode(*(getFather(rec.getData())), res);
         deleteRec(res);
     }
+    debug(root);
     return true;
 }
 
@@ -478,7 +493,7 @@ void IX_IndexHandle::deleteNode(RID &u, RID & v) {
         break;
     }
 
-    if (*(getSize(rec.getData())) == 0) {
+    if (*(getSize(rec.getData())) == -1) {
         deleteNode(*(getFather(rec.getData())), u);
         deleteRec(u);
     }
