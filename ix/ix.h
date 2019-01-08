@@ -99,6 +99,10 @@ private:
     RID *getNext(char *pData) const;
     void *getIndexValue(char *pData, int i) const;
 
+    void setFather(const RID father, const RID son);
+
+    void debug(const RID u);
+
     inline int getSlotOffset(SlotNum slotNum) const {
         return sizeof(IX_PageHeader) + slotNum * recordSize;
     }
