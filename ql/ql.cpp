@@ -327,15 +327,29 @@ bool QL_Manager::checkUnique(Value &value, const AttrcatLayout *attrcat, RM_File
     if (value.data == NULL || ((attrcat->constrFlag >> 1) & 1) == 0) {
         return true;
     }
-    RM_FileScan scan;
-    scan.openScan(*handle, attrcat->attrType, attrcat->attrLength, attrcat->offset, EQ_OP, value.data);
-    RC rc;
-    RM_Record rec;
-    rc = scan.getNextRec(rec);
-    scan.closeScan();
-    if (rc == 0) {
-        Error::primaryNotUniqueError(attrcat->attrName);
-        return false;
+    if (attrcat->indexNo != -1) {
+        IX_IndexScan indexScan;
+        IX_IndexHandle *ixHandle;
+        ixm->openIndex(getPath(smm->dbName, attrcat->relName), attrcat->indexNo, ixHandle);
+        indexScan.openScan(*ixHandle, EQ_OP, value.data);
+        RID rid;
+        RC rc = indexScan.getNextEntry(rid);
+        indexScan.closeScan();
+        if (rc == 0) {
+            Error::primaryNotUniqueError(attrcat->attrName);
+            return false;
+        }
+        indexScan.closeScan();
+    } else {
+        RM_FileScan scan;
+        scan.openScan(*handle, attrcat->attrType, attrcat->attrLength, attrcat->offset, EQ_OP, value.data);
+        RM_Record rec;
+        RC rc = scan.getNextRec(rec);
+        scan.closeScan();
+        if (rc == 0) {
+            Error::primaryNotUniqueError(attrcat->attrName);
+            return false;
+        }
     }
     return true;
 }

@@ -1,6 +1,8 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <map>
+#include <ctime>
 #include "defs.h"
 #include "error.h"
 
@@ -30,6 +32,18 @@ int queryBit(struct BitMap bm, int index);
 void setBit(struct BitMap &bm, int index, int b);
 int findRightMost(struct BitMap bm, int b);
 void print(const struct BitMap &bm);
+
+
+class Timer {
+public:
+    static void markStart(std::string tag);
+    static void markStop(std::string tag);
+    static void markSwitch(std::string tag);
+    static void stat();
+private:
+    static std::map<std::string, clock_t> duration, lastStart;
+    static std::string lastTag;
+};
 
 
 #endif
