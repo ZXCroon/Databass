@@ -72,12 +72,55 @@ void QL_Aggregator::getResult(char *buf, AttrType &attrType) {
 typedef std::pair<RID, RID> PRID;
 
 
-RC QL_Manager::select(int nSelAttrs, const RelAttr selAttrs[],
+void QL_Manager::singleSearch(SearchStrategy strat, const char *relName, RM_FileHandle *handle,
+                              Catalog cat, int nConditions, const Condition conditions[], std::vector<RID> &rids) {
+    RID rid;
+    RM_Record rec;
+    if (strat.attrcat != NULL) {
+        IX_IndexHandle *ixHandle;
+        ixm->openIndex(getPath(smm->dbName, relName), strat.attrcat->indexNo, ixHandle);
+        if (!filterValue(strat.value, strat.attrcat, false)) {
+            Error::condTypeError();
+        }
+        rids.clear();
+        IX_IndexScan indexScan;
+        indexScan.openScan(*ixHandle, strat.compOp, valBuf.data);
+        while (true) {
+            RC rc = indexScan.getNextEntry(rid);
+            if (rc == IX_INDEXSCAN_EOF) {
+                break;
+            }
+            handle->getRec(rid, rec);
+            if (singleValidate(relName, cat, nConditions, conditions, rec)) {
+                rids.push_back(rid);
+            }
+        }
+        indexScan.closeScan();
+        ixm->closeIndex(*ixHandle);
+    } else {
+        rids.clear();
+        RM_FileScan fileScan;
+        fileScan.openScan(*handle, 0, 0, 0, NO_OP, NULL);
+        while (true) {
+            RC rc = fileScan.getNextRec(rec);
+            if (rc == RM_FILESCAN_NONEXT) {
+                break;
+            }
+            if (singleValidate(relName, cat, nConditions, conditions, rec)) {
+                rids.push_back(rec.getRid());
+            }
+        }
+        fileScan.closeScan();
+    }
+}
+
+
+void QL_Manager::select(int nSelAttrs, const RelAttr selAttrs[],
                       const char* relation1, const char *relation2, JoinType joinType,
                       int nConditions, const Condition conditions[]) {
     if (smm->relcatHandle == NULL || smm->attrcatHandle == NULL) {
         Error::notOpenDatabaseError();
-        return 0;
+        return;
     }
     AggType aggType = NO_AGG;
     if (nSelAttrs <= -2) {
@@ -87,17 +130,66 @@ RC QL_Manager::select(int nSelAttrs, const RelAttr selAttrs[],
 
     Catalog cat1, cat2;
     if (!getCatalog(relation1, cat1)) {
-        return QL_NO_SUCH_RELATION;
+        Error::noTableError(smm->dbName, relation1);
+        return;
     }
     if (joinType != NO_JOIN && !getCatalog(relation2, cat2)) {
-        return QL_NO_SUCH_RELATION;
+        Error::noTableError(smm->dbName, relation2);
+        return;
     }
  
     // check selAttrs
     for (int i = 0; i < nSelAttrs; ++i) {
-        if (locateAttrcat(relation1, cat1, selAttrs[i]) == NULL &&
-                (joinType == NO_JOIN || locateAttrcat(relation2, cat2, selAttrs[i]) == NULL)) {
-            return QL_NO_SUCH_ATTRIBUTE;
+        RelAttr ra = selAttrs[i];
+        const AttrcatLayout *ac1 = locateAttrcat(relation1, cat1, ra);
+        const AttrcatLayout *ac2 = (joinType == NO_JOIN ? NULL : locateAttrcat(relation2, cat2, ra));
+        if (ac1 == NULL && ac2 == NULL) {
+            if (ra.relName == NULL && joinType != NO_JOIN) {
+                Error::noColumnError(relation1, relation2, ra.attrName);
+            } else if (joinType == NO_JOIN || strcmp(ra.relName, relation1) == 0) {
+                Error::noColumnError(relation1, ra.relName);
+            } else if (strcmp(ra.relName, relation2) == 0) {
+                Error::noColumnError(relation2, ra.relName);
+            } else {
+                Error::noTableError(smm->dbName, ra.relName);
+            }
+            return;
+        }
+        if (ac1 != NULL && ac2 != NULL) {
+            Error::ambiguousError(ra.attrName);
+            return;
+        }
+    }
+    // check conditions
+    for (int i = 0; i < nConditions; ++i) {
+        for (int t = 0; t < 2; ++t) {
+            RelAttr ra;
+            if (t == 0) {
+                ra = conditions[i].lhsAttr;
+            } else {
+                if (!conditions[i].bRhsIsAttr) {
+                    break;
+                }
+                ra = conditions[i].rhsAttr;
+            }
+            const AttrcatLayout *ac1 = locateAttrcat(relation1, cat1, ra);
+            const AttrcatLayout *ac2 = (joinType == NO_JOIN ? NULL : locateAttrcat(relation2, cat2, ra));
+            if (ac1 == NULL && ac2 == NULL) {
+                if (ra.relName == NULL && joinType != NO_JOIN) {
+                    Error::noColumnError(relation1, relation2, ra.attrName);
+                } else if (joinType == NO_JOIN || strcmp(ra.relName, relation1) == 0) {
+                    Error::noColumnError(relation1, ra.relName);
+                } else if (strcmp(ra.relName, relation2) == 0) {
+                    Error::noColumnError(relation2, ra.relName);
+                } else {
+                    Error::noTableError(smm->dbName, ra.relName);
+                }
+                return;
+            }
+            if (ac1 != NULL && ac2 != NULL) {
+                Error::ambiguousError(ra.attrName);
+                return;
+            }
         }
     }
     if (aggType != NO_AGG && aggType != COUNT_AGG) {
@@ -115,9 +207,9 @@ RC QL_Manager::select(int nSelAttrs, const RelAttr selAttrs[],
 
     SelectStrategy strat;
     if (!decideStrategy(relation1, relation2, cat1, cat2, joinType, nConditions, conditions, strat)) {
-        return QL_NO_SUCH_ATTRIBUTE;
+        return;
+        // return QL_NO_SUCH_ATTRIBUTE;
     }
-
 
     RM_FileHandle *handle1, *handle2;
     rmm->openFile(getPath(smm->dbName, relation1), handle1);
@@ -131,76 +223,14 @@ RC QL_Manager::select(int nSelAttrs, const RelAttr selAttrs[],
     RM_Record rec, rec_;
     std::vector<RID> rids;
     std::vector<PRID> prids;
+    std::vector<RID> rids1, rids2;
 
     if (joinType == NO_JOIN || strat.outer == 0) {
-        std::vector<RID> rids1, rids2;
-        if (strat.strat1.attrcat != NULL) {
-            ixm->openIndex(getPath(smm->dbName, relation1), strat.strat1.attrcat->indexNo, ixHandle1);
-            if (!filterValue(strat.strat1.value, strat.strat1.attrcat, false)) {
-                Error::condTypeError();
-                return 0;
-            }
-            indexScan.openScan(*ixHandle1, strat.strat1.compOp, valBuf.data);
-            while (true) {
-                RC rc = indexScan.getNextEntry(rid);
-                if (rc == IX_INDEXSCAN_EOF) {
-                    break;
-                }
-                handle1->getRec(rid, rec);
-                if (singleValidate(relation1, cat1, nConditions, conditions, rec)) {
-                    rids1.push_back(rid);
-                }
-            }
-            indexScan.closeScan();
-            ixm->closeIndex(*ixHandle1);
-        } else {
-            fileScan.openScan(*handle1, 0, 0, 0, NO_OP, NULL);
-            while (true) {
-                RC rc = fileScan.getNextRec(rec);
-                if (rc == RM_FILESCAN_NONEXT) {
-                    break;
-                }
-                if (singleValidate(relation1, cat1, nConditions, conditions, rec)) {
-                    rids1.push_back(rec.getRid());
-                }
-            }
-            fileScan.closeScan();
-        }
+        singleSearch(strat.strat1, relation1, handle1, cat1, nConditions, conditions, rids1);
         rids = rids1;
 
         if (joinType != NO_JOIN) {
-            if (strat.strat2.attrcat != NULL) {
-                ixm->openIndex(getPath(smm->dbName, relation2), strat.strat2.attrcat->indexNo, ixHandle2);
-                if (!filterValue(strat.strat2.value, strat.strat2.attrcat, false)) {
-                    Error::condTypeError();
-                    return 0;
-                }
-                indexScan.openScan(*ixHandle2, strat.strat2.compOp, valBuf.data);
-                while (true) {
-                    RC rc = indexScan.getNextEntry(rid);
-                    if (rc == IX_INDEXSCAN_EOF) {
-                        break;
-                    }
-                    handle2->getRec(rid, rec);
-                    if (singleValidate(relation2, cat2, nConditions, conditions, rec)) {
-                        rids2.push_back(rid);
-                    }
-                }
-                indexScan.closeScan();
-                ixm->closeIndex(*ixHandle2);
-            } else {
-                fileScan.openScan(*handle2, 0, 0, 0, NO_OP, NULL);
-                while (true) {
-                    RC rc = fileScan.getNextRec(rec);
-                    if (rc == RM_FILESCAN_NONEXT) {
-                        break;
-                    }
-                    if (singleValidate(relation2, cat2, nConditions, conditions, rec)) {
-                        rids2.push_back(rec.getRid());
-                    }
-                }
-                fileScan.closeScan();
-            }
+            singleSearch(strat.strat2, relation2, handle2, cat2, nConditions, conditions, rids2);
 
             bool *visited1 = new bool[rids1.size()];
             bool *visited2 = new bool[rids2.size()];
@@ -236,8 +266,58 @@ RC QL_Manager::select(int nSelAttrs, const RelAttr selAttrs[],
             delete[] visited2;
         } 
     }
-
     // nested-loop case
+    else if (strat.outer == 1) {
+        singleSearch(strat.strat1, relation1, handle1, cat1, nConditions, conditions, rids1);
+        bool *visited1 = new bool[rids1.size()];
+        memset(visited1, false, rids1.size());
+        for (int i = 0; i < rids1.size(); ++i) {
+            handle1->getRec(rids1[i], rec);
+            Value tmpVal = {strat.strat2.auxAttrcat->attrType, rec.getData() + strat.strat2.auxAttrcat->offset};
+            strat.strat2.value = tmpVal;
+            singleSearch(strat.strat2, relation2, handle2, cat2, nConditions, conditions, rids2);
+            for (int j = 0; j < rids2.size(); ++j) {
+                handle2->getRec(rids2[j], rec_);
+                if (pairValidate(relation1, relation2, cat1, cat2, nConditions, conditions, rec, rec_)) {
+                    prids.push_back(std::make_pair(rids1[i], rids2[j]));
+                    visited1[i] = true;
+                }
+            }
+        }
+        if (joinType == LEFT_JOIN) {
+            for (int i = 0; i <= rids1.size(); ++i) {
+                if (!visited1[i]) {
+                    prids.push_back(std::make_pair(rids1[i], RID(-1, -1)));
+                }
+            }
+        }
+        delete[] visited1;
+    } else if (strat.outer == 2) {
+        singleSearch(strat.strat2, relation2, handle2, cat2, nConditions, conditions, rids2);
+        bool *visited2 = new bool[rids2.size()];
+        memset(visited2, false, rids2.size());
+        for (int i = 0; i < rids2.size(); ++i) {
+            handle2->getRec(rids2[i], rec);
+            Value tmpVal = {strat.strat1.auxAttrcat->attrType, rec.getData() + strat.strat1.auxAttrcat->offset};
+            strat.strat1.value = tmpVal;
+            singleSearch(strat.strat1, relation1, handle1, cat1, nConditions, conditions, rids1);
+            for (int j = 0; j < rids1.size(); ++j) {
+                handle1->getRec(rids1[j], rec_);
+                if (pairValidate(relation1, relation2, cat1, cat2, nConditions, conditions, rec_, rec)) {
+                    prids.push_back(std::make_pair(rids1[j], rids2[i]));
+                    visited2[i] = true;
+                }
+            }
+        }
+        if (joinType == RIGHT_JOIN) {
+            for (int i = 0; i <= rids2.size(); ++i) {
+                if (!visited2[i]) {
+                    prids.push_back(std::make_pair(RID(-1, -1), rids2[i]));
+                }
+            }
+        }
+        delete[] visited2;
+    } else throw;
 
     const RelAttr *selAttrs_ = selAttrs;
     RelAttr *selAttrs__;
@@ -348,6 +428,10 @@ RC QL_Manager::select(int nSelAttrs, const RelAttr selAttrs[],
         }
     }
 
+    if (aggType == NO_AGG) {
+        std::cout << (joinType == NO_JOIN ? rids.size() : prids.size()) << " rows" << std::endl;
+    }
+
     rmm->closeFile(*handle1);
     if (joinType != NO_JOIN) {
         rmm->closeFile(*handle2);
@@ -355,7 +439,6 @@ RC QL_Manager::select(int nSelAttrs, const RelAttr selAttrs[],
     if (nSelAttrs == -1) {
         delete[] selAttrs_;
     }
-    return 0;
 }
 
 
@@ -502,7 +585,7 @@ bool QL_Manager::decideStrategy(const char *relation1, const char *relation2,
                         if (ac_ == NULL) {
                             return false;
                         }
-                        strat.strat1.auxAttrcat = ac;
+                        strat.strat1.auxAttrcat = ac_;
                     } else {
                         strat.strat1.value = cond.rhsValue;
                         strat.strat1.auxAttrcat = NULL;
@@ -536,7 +619,7 @@ bool QL_Manager::decideStrategy(const char *relation1, const char *relation2,
                         if (ac_ == NULL) {
                             return false;
                         }
-                        strat.strat2.auxAttrcat = ac;
+                        strat.strat2.auxAttrcat = ac_;
                     } else {
                         strat.strat2.value = cond.rhsValue;
                         strat.strat2.auxAttrcat = NULL;
