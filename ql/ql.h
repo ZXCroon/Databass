@@ -72,7 +72,7 @@ public:
     QL_Manager(SM_Manager *smm, IX_Manager *ixm, RM_Manager *rmm);
     ~QL_Manager();
 
-    RC select(int nSelAttrs, const RelAttr selAttrs[],
+    void select(int nSelAttrs, const RelAttr selAttrs[],
               const char* relation1, const char *relation2, JoinType joinType,
               int nConditions, const Condition conditions[]);
     void insert(const char *relName, int nValues, Value values[]);
@@ -82,6 +82,8 @@ public:
                 int nConditions, const Condition conditions[]);
 
 private:
+    void singleSearch(SearchStrategy strat, const char *relName, RM_FileHandle *handle,
+                      Catalog cat, int nConditions, const Condition conditions[], std::vector<RID> &rids);
     bool getCatalog(const char *relName, Catalog &cat);
     const AttrcatLayout *locateAttrcat(const char *relName, const Catalog &cat, const RelAttr &ra);
     char *getPath(const char *dbName, const char *relName);

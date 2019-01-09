@@ -593,7 +593,6 @@ SelectTableList     :   IDENTIFIER
                         }
                     |   IDENTIFIER ',' IDENTIFIER
                         {
-                            std::cout << "HEY" << std::endl;
                             $$.tableList.clear();
                             $$.tableList.push_back($1.id);
                             $$.tableList.push_back($3.id);
@@ -601,7 +600,6 @@ SelectTableList     :   IDENTIFIER
                         }
                     |   IDENTIFIER INNER JOIN IDENTIFIER
                         {
-                            std::cout << "CAO" << std::endl;
                             $$.tableList.clear();
                             $$.tableList.push_back($1.id);
                             $$.tableList.push_back($4.id);

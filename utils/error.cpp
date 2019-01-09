@@ -61,6 +61,29 @@ void Error::notOpenDatabaseError() {
 }
 
 
+void Error::ambiguousError(const char *attrName) {
+    head();
+    std::cout << "\"" << attrName << "\" is ambiguous." << std::endl;
+}
+
+
+void Error::noTableError(const char *dbName, const char *relName) {
+    head();
+    std::cout << "No table \"" << relName << "\" in database \"" << dbName << "\"." << std::endl;
+}
+
+
+void Error::noColumnError(const char *relName, const char *attrName) {
+    head();
+    std::cout << "No column \"" << attrName << "\" in table \"" << relName << "\"." << std::endl;
+}
+
+
+void Error::noColumnError(const char *relName1, const char *relName2, const char *attrName) {
+    head();
+    std::cout << "No column \"" << attrName << "\" in table \"" << relName1 << "\" and \"" << relName2 << "\"." << std::endl;
+}
+
 void Error::head() {
     err = true;
     std::cout << "\033[1;31m[ERROR] \033[0m";

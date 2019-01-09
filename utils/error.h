@@ -14,6 +14,10 @@ public:
     static void referenceError(const char *attrName, const char *refRelName, const char *refAttrName);
     static void invalidDateError();
     static void notOpenDatabaseError();
+    static void ambiguousError(const char *attrName);
+    static void noTableError(const char *dbName, const char *relName);
+    static void noColumnError(const char *relName, const char *attrName);
+    static void noColumnError(const char *relName1, const char *relName2, const char *attrName);
     static bool err;
 private:
     static void head();

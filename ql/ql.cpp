@@ -378,16 +378,31 @@ bool QL_Manager::checkReference(Value &value, const AttrcatLayout *attrcat) {
     const AttrcatLayout *refAc = locateAttrcat(attrcat->refRelName, refCat, ra);
     rmm->openFile(getPath(smm->dbName, attrcat->refRelName), refHandle);
 
-    RM_FileScan scan;
-    scan.openScan(*refHandle, refAc->attrType, refAc->attrLength, refAc->offset, EQ_OP, value.data);
-    RC rc;
-    RM_Record rec;
-    rc = scan.getNextRec(rec);
-    scan.closeScan();
-    if (rc == RM_FILESCAN_NONEXT) {
-        Error::referenceError(attrcat->attrName, refAc->relName, refAc->attrName);
-        rmm->closeFile(*refHandle);
-        return false;
+    if (refAc->indexNo != -1) {
+        IX_IndexScan indexScan;
+        IX_IndexHandle *ixHandle;
+        ixm->openIndex(getPath(smm->dbName, refAc->relName), refAc->indexNo, ixHandle);
+        indexScan.openScan(*ixHandle, EQ_OP, value.data);
+        RID rid;
+        RC rc = indexScan.getNextEntry(rid);
+        indexScan.closeScan();
+        ixm->closeIndex(*ixHandle);
+        if (rc == IX_INDEXSCAN_EOF) {
+            Error::referenceError(attrcat->attrName, refAc->relName, refAc->attrName);
+            return false;
+        }
+    } else {
+        RM_FileScan scan;
+        scan.openScan(*refHandle, refAc->attrType, refAc->attrLength, refAc->offset, EQ_OP, value.data);
+        RC rc;
+        RM_Record rec;
+        rc = scan.getNextRec(rec);
+        scan.closeScan();
+        if (rc == RM_FILESCAN_NONEXT) {
+            Error::referenceError(attrcat->attrName, refAc->relName, refAc->attrName);
+            rmm->closeFile(*refHandle);
+            return false;
+        }
     }
     return true;
 }
