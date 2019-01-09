@@ -1,6 +1,9 @@
 LEX = flex
 YACC = bison
-CC = g++ -std=c++11 -g
+CC = g++
+CXX = g++
+CFLAGS = -std=c++11
+CXXFLAGS = -std=c++11
 SRCS = $(wildcard **/*.cpp)
 SRCS_FOR_TEST = $(wildcard ??/*.cpp) $(wildcard utils/*.cpp) test.cpp
 #FS_HEADERS = $(wildcard fs/**/*.h)
@@ -22,18 +25,15 @@ $(YACCTARGET): parser/parser.y
 	$(YACC) -d -o $@ $^
 
 $(TARGET): $(LEXTARGET) $(YACCTARGET) $(OBJS)
-	$(CC) -o $@ $^
+	$(CXX) -o $@ $^
 	rm -rf $(TEST_DIR)
 	mkdir $(TEST_DIR)
 
 test: $(OBJS_FOR_TEST)
-	$(CC) -o test $^
+	$(CXX) -o test $^
 	rm -rf $(TEST_DIR)
 	mkdir $(TEST_DIR)
 	./test
-
-%.o: %.c %.h
-	$(CC) -c -o $@ $^
 
 clean:
 	rm -f test

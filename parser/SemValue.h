@@ -22,7 +22,7 @@ public:
         isForeign = false;
     }
     AttrEntry(FieldType fieldType, char *id) : fieldType(fieldType), id(id) { }
-    AttrEntry(FieldType fieldType, char *id, char *tbname, char *colname) : id(id) {
+    AttrEntry(FieldType fieldType, char *id, char *tbname, char *colname) : fieldType(fieldType), id(id) {
         refTbname = tbname;
         refColname = colname;
     }

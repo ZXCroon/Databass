@@ -3,6 +3,7 @@
 
 #include <map>
 #include <ctime>
+#include <string>
 #include "defs.h"
 #include "error.h"
 
