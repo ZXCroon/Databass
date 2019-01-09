@@ -133,13 +133,11 @@ bool SM_Manager::createTable(const char *relName, int attrCount, AttrInfo *attri
     relcat.tupleLength = 0;
     relcat.attrCount = attrCount;
     relcat.nextIndex = 0;
-    AttrInfo *attr = attributes;
+    AttrInfo *attr = attributes, *attrPrimary = NULL;
     for (int i = 0; i < attrCount; ++i, ++attr) {
         AttrcatLayout attrcat;
         strcpy(attrcat.relName, relName);
         strcpy(attrcat.attrName, attr->attrName);
-        // padName(attrcat.relName);
-        // padName(attrcat.attrName);
         attrcat.offset = relcat.tupleLength;
         attrcat.attrType = attr->attrType;
         attrcat.attrLength = attr->attrLength;
@@ -151,6 +149,7 @@ bool SM_Manager::createTable(const char *relName, int attrCount, AttrInfo *attri
         }
         if (attr->isPrimary) {
             attrcat.constrFlag |= 2;
+            attrPrimary = attr;
         }
         if (attr->isForeign) {
             attrcat.constrFlag |= 4;
@@ -168,6 +167,9 @@ bool SM_Manager::createTable(const char *relName, int attrCount, AttrInfo *attri
     relcatHandle->insertRec((char *)(&relcat), rid);
 
     rmm->createFile(getPath(dbName, relName), relcat.tupleLength);
+    if (attrPrimary) {
+        createIndex(relName, attrPrimary->attrName);
+    }
 
     return true;
 }
